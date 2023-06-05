@@ -8,14 +8,26 @@
 import SwiftUI
 
 struct MovieFullListView: View {
-    @ObservedObject private var movieListState = MovieListState()
+    @ObservedObject private var movieListState: MovieListState
     
     let title: String
-    let movies: [Movie]
+    let endpoint: MovieListEndpoint
+    
+    @State private var isLoggedIn = false
     
     @State var selection = 0
     
+    @State private var watchedOn = false
+    @State private var savedOn = false
+    @State private var isScrolledToEnd = false
+    
     var items: [GridItem] = [GridItem(.flexible(), spacing: 20), GridItem(.flexible(), spacing: 20)]
+    
+    init(title: String, endpoint: MovieListEndpoint) {
+        self.title = title
+        self.endpoint = endpoint
+        self.movieListState = MovieListState()
+    }
     
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
@@ -26,7 +38,7 @@ struct MovieFullListView: View {
             
             ScrollView(.vertical, showsIndicators: false) {
                 LazyVGrid(columns: items, spacing: 30) {
-                    ForEach(self.movies) { movie in
+                    ForEach(movieListState.movies) { movie in
                         VStack {
                             NavigationLink(destination: MovieDetailView(movieId: movie.id)) {
                                 MoviePosterCard(movie: movie)
@@ -36,30 +48,80 @@ struct MovieFullListView: View {
                             
                             HStack {
                                 Spacer()
-                                    
+                                
                                 Button(action: {
-                                    // Action code here
+                                    // Watch button
+                                    if !UserDefaults.standard.getLoggedIn() {
+                                        // Handle action when user is not logged in
+                                        // For example, display an alert or navigate to the login screen
+                                        // Add your code here
+                                    } else {
+                                        // Handle action when user is logged in
+                                        let watchedOn = UserDefaults.standard.getWatchedState(forMovieId: movie.id)
+                                        UserDefaults.standard.setWatchedState(value: !watchedOn, forMovieId: movie.id)
+                                    }
                                 }) {
                                     VStack {
-                                        if selection == 0 {
+                                        if !UserDefaults.standard.getLoggedIn() {
+                                            Image("Watch (locked)")
+                                                .resizable()
+                                                .frame(width: 25, height: 25)
+                                        } else if UserDefaults.standard.getWatchedState(forMovieId: movie.id) {
                                             Image("Watched")
                                                 .resizable()
-                                                .frame(width: 28, height: 28)
+                                                .frame(width: 25, height: 25)
                                         } else {
-                                            Image("watch")
+                                            Image("Watch")
                                                 .resizable()
-                                                .frame(width: 28, height: 28)
+                                                .frame(width: 25, height: 25)
                                         }
                                     }
                                 }
+                                .disabled(!UserDefaults.standard.getLoggedIn())
                                 
                                 Spacer()
                                 
+//                                Button(action: {
+//                                    // Save button
+//                                    if UserDefaults.standard.getLoggedIn() {
+//                                        let savedState = UserDefaults.standard.getSavedState(forMovieId: movie.id)
+//                                        UserDefaults.standard.setSavedState(value: !savedState, forMovieId: movie.id)
+//                                    }
+//                                }) {
+//                                    VStack {
+//                                        if !UserDefaults.standard.getLoggedIn() {
+//                                            Image("Save (locked)")
+//                                                .resizable()
+//                                                .frame(width: 25, height: 25)
+//                                        } else if UserDefaults.standard.getSavedState(forMovieId: movie.id) {
+//                                            Image("Saved")
+//                                                .resizable()
+//                                                .frame(width: 25, height: 25)
+//                                        } else {
+//                                            Image("Save")
+//                                                .resizable()
+//                                                .frame(width: 25, height: 25)
+//                                        }
+//                                    }
+//                                }
+//                                
                                 Button(action: {
-                                    // Action code here
+                                    // Save button
+                                    if UserDefaults.standard.getLoggedIn() {
+                                        if savedOn {
+                                            UserDefaults.standard.setSavedState(value: false, forMovieId: movie.id)
+                                        } else {
+                                            UserDefaults.standard.setSavedState(value: true, forMovieId: movie.id)
+                                        }
+                                        savedOn.toggle()
+                                    }
                                 }) {
                                     VStack {
-                                        if selection == 1 {
+                                        if !UserDefaults.standard.getLoggedIn() {
+                                            Image("Save (locked)")
+                                                .resizable()
+                                                .frame(width: 25, height: 25)
+                                        } else if savedOn {
                                             Image("Saved")
                                                 .resizable()
                                                 .frame(width: 25, height: 25)
@@ -70,6 +132,10 @@ struct MovieFullListView: View {
                                         }
                                     }
                                 }
+                                .onAppear {
+                                    savedOn = UserDefaults.standard.getSavedState(forMovieId: movie.id)
+                                }
+                                .disabled(!UserDefaults.standard.getLoggedIn())
                                 
                                 Spacer()
                             }
@@ -79,15 +145,31 @@ struct MovieFullListView: View {
                         .cornerRadius(10)
                     }
                 }
-                .padding(.leading, 8)
-                .padding(.trailing, 8)
+                Button(action: {
+                    movieListState.fetchNextPage(from: endpoint)
+                }) {
+                    Text("Load More")
+                        .font(.headline)
+                        .foregroundColor(.blue)
+                        .padding()
+                        .background(Color.gray.opacity(0.1))
+                        .cornerRadius(10)
+                }
+                .padding()
             }
         }
+        .onAppear {
+            loadInitialMovies()
+        }
+    }
+    
+    private func loadInitialMovies() {
+        movieListState.loadMovies(from: endpoint, page: 1)
     }
 }
 
-struct MovieFullListView_Previews: PreviewProvider {
-    static var previews: some View {
-        MovieFullListView(title: "Now Playing", movies: Movie.stubbedMovies)
-    }
-}
+//struct MovieFullListView_Previews: PreviewProvider {
+//    static var previews: some View {
+//        MovieFullListView(title: "", endpoint: MovieListEndpoint)
+//    }
+//}

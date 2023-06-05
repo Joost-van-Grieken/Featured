@@ -18,17 +18,26 @@ class MovieStore: MovieService {
     let baseAPIURL = "https://api.themoviedb.org/3"
     let urlSession = URLSession.shared
     let jsonDecoder = Utils.jsonDecoder
-
-    func fetchMovies(from endpoint: MovieListEndpoint, completion: @escaping (Result<MovieResponse, MovieError>) -> ()) {
-        guard let url = URL(string: "\(baseAPIURL)/movie/\(endpoint.rawValue)") else {
+    
+    func fetchMovies(from endpoint: MovieListEndpoint, page: Int, completion: @escaping (Result<MovieResponse, MovieError>) -> ()) {
+        guard let url = URL(string: "\(baseAPIURL)/movie/\(endpoint.rawValue)?api_key=\(apiKey)&page=\(page)&include_adult=false") else {
             completion(.failure(.invalidEndpoint))
             return
         }
         self.loadURLAndDecode(url: url, completion: completion)
+        print(url)
     }
+
+//    func fetchMovies(from endpoint: MovieListEndpoint, completion: @escaping (Result<MovieResponse, MovieError>) -> ()) {
+//        guard let url = URL(string: "\(baseAPIURL)/movie/\(endpoint.rawValue)") else {
+//            completion(.failure(.invalidEndpoint))
+//            return
+//        }
+//        self.loadURLAndDecode(url: url, completion: completion)
+//    }
     
     func fetchMovie(id: Int, completion: @escaping (Result<Movie, MovieError>) -> ()) {
-        guard let url = URL(string: "\(baseAPIURL)/movie/\(id)") else {
+        guard let url = URL(string: "\(baseAPIURL)/movie/\(id)&include_adult=false") else {
             completion(.failure(.invalidEndpoint))
             return
         }
@@ -37,8 +46,8 @@ class MovieStore: MovieService {
         ], completion: completion)
     }
     
-//    func discoverMovies(from endpoint: dicoverEndpoint, completion: @escaping (Result<MovieResponse, MovieError>) -> ()) {
-//        guard let url = URL(string: "\(baseAPIURL)/discover/movie/\(endpoint.rawValue)") else {
+//    func discoverMovies(from endpoint: dicoverEndpoint, page: Int, completion: @escaping (Result<MovieResponse, MovieError>) -> ()) {
+//        guard let url = URL(string: "\(baseAPIURL)/discover/movie/\(endpoint.rawValue)?api_key=\(apiKey)&page=\(page)") else {
 //            completion(.failure(.invalidEndpoint))
 //            return
 //        }

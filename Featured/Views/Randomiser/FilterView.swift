@@ -22,26 +22,14 @@ struct FilterView: View {
     @Environment(\.presentationMode) var presentationMode
     
     @Binding var numOptions: Int
-//    @Binding var year: Int?
-//    @Binding var voteCountGte: Double?
     @Binding var genres: String?
-//    @Binding var originalLanguage: String?
-//    @Binding var watchProviders: String?
-//    @Binding var watchRegion: String?
     
     let movie: Movie
     
     @StateObject private var movieGenres = MovieGenres()
     
     let optionRange = 1...10
-//    @State var selectedMedia: Filter?
-//    @State var selectedList: Filter?
-//    @State var selectedEra: Set<Filter> = []
-//    @State var selectedScore: Set<Filter> = []
     @State var selectedGenre: Set<FilterGenres> = []
-//    @State var selectedLanguage: Set<Filter> = []
-//    @State var selectedProvider: Set<Filter> = []
-//    @State var selectedRegion: Filter?
     
     @State private var selectedGenreIds: Set<Int> = []
 
@@ -51,14 +39,6 @@ struct FilterView: View {
         NavigationView {
             VStack {
                 List {
-//                    VStack {
-//                        Picker("Choose your poison", selection: $selectedMedia) {
-//                            ForEach(allMedia, id: \.name) { media in
-//                                Text(media.name)
-//                            }
-//                        }
-//                    }
-                    
                     VStack {
                         Picker("Nr. of options", selection: $numOptions) {
                             ForEach(optionRange, id: \.self) { option in
@@ -67,6 +47,99 @@ struct FilterView: View {
                         }
                     }
                     
+                    VStack {
+                        MultiSelector(
+                            label: Text("Genre"),
+                            options: allGenres,
+                            optionToString: { $0.name },
+                            selected: $selectedGenre
+                        )
+                    }
+                }
+                
+                Button(action: {
+                    saveSelectedValues(genres: selectedGenre)
+                    
+                    self.presentationMode.wrappedValue.dismiss()
+                }, label: {
+                    Text("Done")
+                        .foregroundColor(.white)
+                        .frame(width:300, height: 50)
+                        .background(Color.accentColor)
+                        .cornerRadius(10)
+                })
+            }
+            .navigationTitle("Filter")
+        }
+    }
+}
+
+func saveSelectedValues(genres: Set<FilterGenres>) {
+// Convert the selected options to an array of their names
+    let selectedGenres = genres.map { $0.name }
+    
+// Save the selected values to UserDefaults, database, or any other storage mechanism
+    UserDefaults.standard.set(selectedGenres, forKey: "selectedGenre")
+}
+
+struct FilterView_Previews: PreviewProvider {
+    static var previews: some View {
+        FilterView(numOptions: .constant(3),
+                   genres: .constant(nil),
+                   movie: Movie.stubbedMovie)
+    }
+}
+
+
+//struct FilterView: View {
+//    @Environment(\.presentationMode) var presentationMode
+//
+//    @Binding var numOptions: Int
+//    @Binding var year: Int?
+//    @Binding var voteCountGte: Double?
+//    @Binding var genres: String?
+//    @Binding var originalLanguage: String?
+//    @Binding var watchProviders: String?
+//    @Binding var watchRegion: String?
+//
+//    let movie: Movie
+//
+//    @StateObject private var movieGenres = MovieGenres()
+//
+//    let optionRange = 1...10
+//    @State var selectedMedia: Filter?
+//    @State var selectedList: Filter?
+//    @State var selectedEra: Set<Filter> = []
+//    @State var selectedScore: Set<Filter> = []
+//    @State var selectedGenre: Set<FilterGenres> = []
+//    @State var selectedLanguage: Set<Filter> = []
+//    @State var selectedProvider: Set<Filter> = []
+//    @State var selectedRegion: Filter?
+//
+//    @State private var selectedGenreIds: Set<Int> = []
+//
+//    @State private var showRandomiser = false
+//
+//    var body: some View {
+//        NavigationView {
+//            VStack {
+//                List {
+//                    VStack {
+//                        Picker("Choose your poison", selection: $selectedMedia) {
+//                            ForEach(allMedia, id: \.name) { media in
+//                                Text(media.name)
+//                            }
+//                        }
+//                    }
+//
+//                    VStack {
+//                        Picker("Nr. of options", selection: $numOptions) {
+//                            ForEach(optionRange, id: \.self) { option in
+//                                Text("\(option)")
+//                            }
+//                        }
+//                    }
+//
 //                    VStack {
 //                        Picker("List", selection: $selectedList) {
 //                            ForEach(allList, id: \.name) { list in
@@ -124,16 +197,16 @@ struct FilterView: View {
 //                            selected: $selectedScore
 //                        )
 //                    }
-                    
-                    VStack {
-                        MultiSelector(
-                            label: Text("Genre"),
-                            options: allGenres,
-                            optionToString: { $0.name },
-                            selected: $selectedGenre
-                        )
-                    }
-                    
+//
+//                    VStack {
+//                        MultiSelector(
+//                            label: Text("Genre"),
+//                            options: allGenres,
+//                            optionToString: { $0.name },
+//                            selected: $selectedGenre
+//                        )
+//                    }
+//
 //                    VStack {
 //                        MultiSelector(
 //                            label: Text("Language"),
@@ -159,65 +232,59 @@ struct FilterView: View {
 //                            }
 //                        }
 //                    }
-                }
-                
-                Button(action: {
-//                    saveSelectedValues(media: selectedMedia, list: selectedList, era: selectedEra, genres: selectedGenre, language: selectedLanguage, provider: selectedProvider, region: selectedRegion)
-                    saveSelectedValues(genres: selectedGenre)
-                    
-                    self.presentationMode.wrappedValue.dismiss()
-                }, label: {
-                    Text("Done")
-                        .foregroundColor(.white)
-                        .frame(width:300, height: 50)
-                        .background(Color.accentColor)
-                        .cornerRadius(10)
-                })
-            }
-            .navigationTitle("Filter")
-        }
-    }
-}
-
-func saveSelectedValues(genres: Set<FilterGenres>) {
+//                }
+//
+//                Button(action: {
+//                    saveSelectedValues(genres: selectedGenre)
+//
+//                    self.presentationMode.wrappedValue.dismiss()
+//                }, label: {
+//                    Text("Done")
+//                        .foregroundColor(.white)
+//                        .frame(width:300, height: 50)
+//                        .background(Color.accentColor)
+//                        .cornerRadius(10)
+//                })
+//            }
+//            .navigationTitle("Filter")
+//        }
+//    }
+//}
+//
+//func saveSelectedValues(genres: Set<FilterGenres>) {
 //    (media: Filter?, list: Filter?, era: Set<Filter>, genres: Set<Filter>, language: Set<Filter>, provider: Set<Filter>, region: Filter?)
-    // Convert the selected options to an array of their names
+////     Convert the selected options to an array of their names
 //    let selectedMedia = media.map { $0.name }
 //    let selectedNumOptions = numOptions.map { $0.name }
 //    let selectedList = list.map { $0.name }
 //    let selectedEra = era.map { $0.name }
 //    let selectedRating = rating.map { $0.name }
-    let selectedGenres = genres.map { $0.name }
+//    let selectedGenres = genres.map { $0.name }
 //    let selectedLanguage = language.map { $0.name }
 //    let selectedProvider = provider.map { $0.name }
 //    let selectedRegion = region.map { $0.name }
-    
-    // Save the selected values to UserDefaults, database, or any other storage mechanism
+//
+//    // Save the selected values to UserDefaults, database, or any other storage mechanism
 //    UserDefaults.standard.set(selectedMedia, forKey: "selectedMedia")
 //    UserDefaults.standard.set(selectedNumOptions, forKey: "selectedNumOptions")
 //    UserDefaults.standard.set(selectedList, forKey: "selectedList")
 //    UserDefaults.standard.set(selectedEra, forKey: "selectedEra")
 //    UserDefaults.standard.set(selectedRating, forKey: "selectedRating")
-    UserDefaults.standard.set(selectedGenres, forKey: "selectedGenre")
+//    UserDefaults.standard.set(selectedGenres, forKey: "selectedGenre")
 //    UserDefaults.standard.set(selectedLanguage, forKey: "selectedLanguages")
 //    UserDefaults.standard.set(selectedProvider, forKey: "selectedProviders")
 //    UserDefaults.standard.set(selectedRegion, forKey: "selectedRegions")
-}
-
-struct FilterView_Previews: PreviewProvider {
-    static var previews: some View {
-        FilterView(numOptions: .constant(3),
-                   genres: .constant(nil),
-                   movie: Movie.stubbedMovie)
-    }
-}
-
-
-//numOptions: .constant(3),
-//           year: .constant(nil),
-//           voteCountGte: .constant(nil),
-//           genres: .constant(nil),
-//           originalLanguage: .constant(nil),
-//           watchProviders: .constant(nil),
-//           watchRegion: .constant(nil),
-//           movie: Movie.stubbedMovie)
+//}
+//
+//struct FilterView_Previews: PreviewProvider {
+//    static var previews: some View {
+//        FilterView(numOptions: .constant(3),
+//                   year: .constant(nil),
+//                   voteCountGte: .constant(nil),
+//                   genres: .constant(nil),
+//                   originalLanguage: .constant(nil),
+//                   watchProviders: .constant(nil),
+//                   watchRegion: .constant(nil),
+//                   movie: Movie.stubbedMovie))
+//    }
+//}

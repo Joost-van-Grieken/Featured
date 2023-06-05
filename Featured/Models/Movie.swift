@@ -12,7 +12,6 @@ struct MovieResponse: Decodable {
     let results: [Movie]
 }
 
-
 struct Movie: Decodable, Identifiable, Hashable {
     static func == (lhs: Movie, rhs: Movie) -> Bool {
         lhs.id == rhs.id
@@ -58,9 +57,19 @@ struct Movie: Decodable, Identifiable, Hashable {
         return URL(string: "https://image.tmdb.org/t/p/w500\(posterPath ?? "")")!
     }
     
+//    var genreText: String {
+//        genres?.first?.name ?? "n/a"
+//    }
+    
     var genreText: String {
-        genres?.first?.name ?? "n/a"
+        guard let genres = genres, !genres.isEmpty else {
+            return "n/a"
+        }
+        
+        let genreNames = genres.map { $0.name }
+        return genreNames.joined(separator: ", ")
     }
+
     
 //    var ratingText: String {
 //            let rating = Int(voteAverage)
@@ -83,19 +92,44 @@ struct Movie: Decodable, Identifiable, Hashable {
         return "\(ratingText.count)/10"
     }
     
+    var formattedVoteCount: String {
+        if voteCount >= 1000 {
+            let thousandValue = Double(voteCount) / 1000.0
+            let roundedValue = String(format: "%.1f", thousandValue)
+            return "\(roundedValue)K votes"
+        } else {
+            let numberFormatter = NumberFormatter()
+            numberFormatter.numberStyle = .decimal
+            let formattedCount = numberFormatter.string(from: NSNumber(value: voteCount)) ?? "0"
+            return "\(formattedCount) votes"
+        }
+    }
+
+    
     var yearText: String {
         guard let releaseDate = self.releaseDate, let date = Utils.dateFormatter.date(from: releaseDate) else {
             return "n/a"
         }
-        return Movie.yearFormatter.string(from: date)
+        
+        let dateFormatter = DateFormatter()
+        dateFormatter.dateFormat = "dd MMM, yyyy" // Set the desired date format
+        return dateFormatter.string(from: date)
     }
     
     var durationText: String {
         guard let runtime = self.runtime, runtime > 0 else {
             return "n/a"
         }
-        return Movie.durationFormatter.string(from: TimeInterval(runtime) * 60) ?? "n/a"
+        
+        return "\(runtime) minutes"
     }
+
+//    var durationText: String {
+//        guard let runtime = self.runtime, runtime > 0 else {
+//            return "n/a"
+//        }
+//        return Movie.durationFormatter.string(from: TimeInterval(runtime) * 60) ?? "n/a"
+//    }
     
     var cast: [MovieCast]? {
         credits?.cast

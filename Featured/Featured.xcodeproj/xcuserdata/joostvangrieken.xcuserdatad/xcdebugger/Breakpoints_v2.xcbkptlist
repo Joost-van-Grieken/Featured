@@ -20,6 +20,21 @@
             landmarkType = "3">
             <Locations>
                <Location
+                  uuid = "5C7902DA-1F04-4E86-BBEF-0432EB322373 - 38f30781a550bfc2"
+                  shouldBeEnabled = "Yes"
+                  ignoreCount = "0"
+                  continueAfterRunningActions = "No"
+                  symbolName = "Featured.RandomMovieStore.__allocating_init() -&gt; Featured.RandomMovieStore"
+                  moduleName = "Featured"
+                  usesParentBreakpointCondition = "Yes"
+                  urlString = "file:///Users/joostvangrieken/Documents/2.%20School/Jaar%204/Afstudeer%20project/App/Featured/Services/RandomMovieStore.swift"
+                  startingColumnNumber = "9223372036854775807"
+                  endingColumnNumber = "9223372036854775807"
+                  startingLineNumber = "0"
+                  endingLineNumber = "0"
+                  offsetFromSymbolStart = "10">
+               </Location>
+               <Location
                   uuid = "5C7902DA-1F04-4E86-BBEF-0432EB322373 - faca6116cb22b65d"
                   shouldBeEnabled = "Yes"
                   ignoreCount = "0"
@@ -48,21 +63,6 @@
                   startingLineNumber = "0"
                   endingLineNumber = "0"
                   offsetFromSymbolStart = "16">
-               </Location>
-               <Location
-                  uuid = "5C7902DA-1F04-4E86-BBEF-0432EB322373 - 38f30781a550bfc2"
-                  shouldBeEnabled = "Yes"
-                  ignoreCount = "0"
-                  continueAfterRunningActions = "No"
-                  symbolName = "Featured.RandomMovieStore.__allocating_init() -&gt; Featured.RandomMovieStore"
-                  moduleName = "Featured"
-                  usesParentBreakpointCondition = "Yes"
-                  urlString = "file:///Users/joostvangrieken/Documents/2.%20School/Jaar%204/Afstudeer%20project/App/Featured/Services/RandomMovieStore.swift"
-                  startingColumnNumber = "9223372036854775807"
-                  endingColumnNumber = "9223372036854775807"
-                  startingLineNumber = "0"
-                  endingLineNumber = "0"
-                  offsetFromSymbolStart = "10">
                </Location>
                <Location
                   uuid = "5C7902DA-1F04-4E86-BBEF-0432EB322373 - a070ec8505245ae7"

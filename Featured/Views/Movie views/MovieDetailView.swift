@@ -8,10 +8,10 @@
 import SwiftUI
 
 struct MovieDetailView: View {
-    
     let movieId: Int
     @ObservedObject private var movieDetailState = MovieDetailState()
-    
+    @State private var isLoggedIn = UserDefaults.standard.bool(forKey: UserDefaults.UserDefaultsKeys.isLoggedIn.rawValue) // Add the isLoggedIn property
+
     var body: some View {
         ZStack {
             LoadingView(isLoading: self.movieDetailState.isLoading, error: self.movieDetailState.error) {
@@ -19,8 +19,7 @@ struct MovieDetailView: View {
             }
             
             if movieDetailState.movie != nil {
-                MovieDetailListView(movie: self.movieDetailState.movie!)
-                
+                MovieDetailListView(movie: self.movieDetailState.movie!, username: "", isLoggedIn: false)
             }
         }
         .onAppear {
@@ -31,11 +30,21 @@ struct MovieDetailView: View {
 
 struct MovieDetailListView: View {
     
+    struct CustomColor {
+        static let locked = Color("locked")
+    }
+    
     let movie: Movie
     @State private var selectedTrailer: MovieVideo?
     let imageLoader = ImageLoader()
     
-    @State var selection = 0
+    let username: String
+    @State var isLoggedIn: Bool
+
+    @State private var selectedScore: Int = 1
+    @State private var watchedOn = false
+    @State private var savedOn = false
+    @State private var isMovieSaved: Bool = false
     
     var body: some View {
         ScrollView {
@@ -71,62 +80,111 @@ struct MovieDetailListView: View {
                                 .resizable()
                                 .frame(width: 35, height: 35)
                                 .padding(.trailing, -5)
-                            Text(movie.ratingText).foregroundColor(.accentColor)
-                                .font(.system(size: 18) .weight(.medium))
+                            HStack(alignment: .bottom) {
+                                Text(movie.ratingText).foregroundColor(.accentColor)
+                                    .font(.system(size: 18) .weight(.medium))
+                                Text(movie.formattedVoteCount).foregroundColor(.accentColor)
+                                    .font(.system(size: 12))
+                            }
                         }
                         
                         Spacer()
                         
-                        HStack(alignment: .center) {
-                            Button(action: {
-                                
-                            }) {
-                                Text("add a score")
+                        HStack {
+                            if UserDefaults.standard.getLoggedIn() {
+                                // Handle UI when user is logged in
+                                Picker("Add a score", selection: $selectedScore) {
+                                    ForEach(1...10, id: \.self) { score in
+                                        Text("\(score)")
+                                    }
+                                }
+                                .padding(10)
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 10)
+                                        .stroke(Color.accentColor, lineWidth: 2)
+                                )
+                            } else {
+                                // Handle UI when user is not logged in
+                                Text("Account required")
+                                    .foregroundColor(CustomColor.locked)
                                     .padding(10)
                                     .overlay(
                                         RoundedRectangle(cornerRadius: 10)
-                                            .stroke(Color.accentColor, lineWidth: 2)
+                                            .stroke(CustomColor.locked, lineWidth: 2)
                                     )
                             }
                         }
                     }
                 }
+                .frame(height: 240)
                 
                 Spacer()
-                    .frame(height: 30)
+                    .frame(height: 10)
                 
-                HStack {
+                HStack(alignment: .center) {
                     Spacer()
                         .frame(width: 30)
+                    
                     Button(action: {
-                        // Action code here
+                        // Watch button
+                        if UserDefaults.standard.getLoggedIn() {
+                            if watchedOn {
+                                UserDefaults.standard.setWatchedMovieCount(value: false, forMovieId: movie.id)
+                            } else {
+                                UserDefaults.standard.setWatchedMovieCount(value: true, forMovieId: movie.id)
+                            }
+                            watchedOn.toggle()
+                        }
                     }) {
                         VStack {
-                            if selection == 0 {
+                            if !UserDefaults.standard.getLoggedIn() {
+                                Image("Watch (locked)")
+                                Text("watch").foregroundColor(CustomColor.locked)
+                            } else if watchedOn {
                                 Image("Watched")
                                 Text("watched")
                             } else {
-                                Image("watch")
+                                Image("Watch")
                                 Text("watch")
                             }
                         }
                     }
+                    .onAppear {
+                        watchedOn = UserDefaults.standard.getWatchedState(forMovieId: movie.id)
+                    }
+                    .disabled(!UserDefaults.standard.getLoggedIn())
                     
                     Spacer()
                     
                     Button(action: {
-                        // Action code here
+                        // Save button
+                        if UserDefaults.standard.getLoggedIn() {
+                            if savedOn {
+                                UserDefaults.standard.setSavedState(value: false, forMovieId: movie.id)
+                            } else {
+                                UserDefaults.standard.setSavedState(value: true, forMovieId: movie.id)
+                            }
+                            savedOn.toggle()
+                        }
                     }) {
                         VStack {
-                            if selection == 1 {
+                            if !UserDefaults.standard.getLoggedIn() {
+                                Image("Save (locked)")
+                                Text("Save").foregroundColor(CustomColor.locked)
+                            } else if savedOn {
                                 Image("Saved")
-                                Text("Saved")
+                                Text("saved")
                             } else {
                                 Image("Save")
-                                Text("Save")
+                                Text("save")
                             }
                         }
                     }
+                    .onAppear {
+                        savedOn = UserDefaults.standard.getSavedState(forMovieId: movie.id)
+                    }
+                    .disabled(!UserDefaults.standard.getLoggedIn())
+
                     Spacer()
                     
                     if let trailers = movie.youtubeTrailers, !trailers.isEmpty {
@@ -153,8 +211,17 @@ struct MovieDetailListView: View {
                     SafariView(url: trailer.youtubeURL!)
                 }
                 
-                Spacer()
-                    .frame(height: 30)
+                Divider()
+                    .frame(height: 20)
+                
+                VStack(alignment: .leading, spacing: 5) {
+                    Text("Genres:")
+                        .font(.system(size: 16) .weight(.bold))
+                    Text(movie.genreText)
+                }
+                
+                Divider()
+                    .frame(height: 20)
                 
                 VStack {
                     Text(movie.overview)
@@ -210,100 +277,6 @@ struct MovieDetailListView: View {
             .padding()
         }
         .edgesIgnoringSafeArea(.top)
-        
-//        List {
-//            MovieDetailImage(imageLoader: imageLoader, imageURL: self.movie.backdropURL)
-//                .listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0))
-//
-//            HStack {
-//                Text(movie.genreText)
-//                Text("·")
-//                Text(movie.yearText)
-//                Text(movie.durationText)
-//            }
-//
-//            Text(movie.overview)
-//            HStack {
-//                Image("Heart")
-//                    .resizable()
-//                    .frame(width: 25, height: 25)
-//                    .padding(.trailing, -5)
-//                Text(movie.ratingText).foregroundColor(.accentColor)
-//            }
-////            .onTapGesture(count: 1) {
-////                Picker(selection: $selectedTheme) {
-////                    ForEach(themes, id: \.self) {
-////                        Text($0)
-////                    }
-////                }
-////                .pickerStyle(.wheel)
-////            }
-//
-//            Divider()
-//
-//            HStack(alignment: .top, spacing: 4) {
-//                if movie.cast != nil && movie.cast!.count > 0 {
-//                    VStack(alignment: .leading, spacing: 4) {
-//                        Text("Starring").font(.headline)
-//                        ForEach(self.movie.cast!.prefix(9)) { cast in
-//                            Text(cast.name)
-//                        }
-//                    }
-//                    .frame(minWidth: 0, maxWidth: .infinity, alignment: .leading)
-//                    Spacer()
-//
-//                }
-//
-//                if movie.crew != nil && movie.crew!.count > 0 {
-//                    VStack(alignment: .leading, spacing: 4) {
-//                        if movie.directors != nil && movie.directors!.count > 0 {
-//                            Text("Director(s)").font(.headline)
-//                            ForEach(self.movie.directors!.prefix(2)) { crew in
-//                                Text(crew.name)
-//                            }
-//                        }
-//
-//                        if movie.producers != nil && movie.producers!.count > 0 {
-//                            Text("Producer(s)").font(.headline)
-//                                .padding(.top)
-//                            ForEach(self.movie.producers!.prefix(2)) { crew in
-//                                Text(crew.name)
-//                            }
-//                        }
-//
-//                        if movie.screenWriters != nil && movie.screenWriters!.count > 0 {
-//                            Text("Screenwriter(s)").font(.headline)
-//                                .padding(.top)
-//                            ForEach(self.movie.screenWriters!.prefix(2)) { crew in
-//                                Text(crew.name)
-//                            }
-//                        }
-//                    }
-//                    .frame(minWidth: 0, maxWidth: .infinity, alignment: .leading)
-//                }
-//            }
-//
-//            Divider()
-//
-//            if let trailers = movie.youtubeTrailers, !trailers.isEmpty {
-//                let trailer = trailers[0] // Get the first trailer
-//
-//                Button(action: {
-//                    self.selectedTrailer = trailer
-//                }) {
-//                    HStack {
-//                        Text(trailer.name)
-//                        Spacer()
-//                        Image(systemName: "play.circle.fill")
-//                            .foregroundColor(Color(UIColor.systemBlue))
-//                    }
-//                }
-//            }
-//        }
-//
-//        .sheet(item: self.$selectedTrailer) { trailer in
-//            SafariView(url: trailer.youtubeURL!)
-//        }
     }
 }
 

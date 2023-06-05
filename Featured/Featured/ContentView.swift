@@ -10,11 +10,10 @@ import SwiftUI
 struct ContentView: View {
     
     @State var selection = 0
-    @State private var shouldCancelRandomiseButton = false
     
     var body: some View {
         TabView (selection: $selection) {
-            MovieListView(username: "", showingLoginScreen: true)
+            MovieListView(username: "", isLoggedIn: true)
                 .tabItem {
                     VStack {
                         if selection == 0 {
@@ -25,7 +24,7 @@ struct ContentView: View {
                         Text("Home")
                     }
                 }
-            .tag(0)
+                .tag(0)
             
             RandomiserView(numOptions: .constant(3),
                            year: .constant(nil),
@@ -45,11 +44,8 @@ struct ContentView: View {
                         Text("Randomiser")
                             .font(.system(size: 30, weight: .bold))
                     }
-                    .onTapGesture {
-                        shouldCancelRandomiseButton = true
-                    }
                 }
-            .tag(1)
+                .tag(1)
             
             UserView()
                 .tabItem {
@@ -62,7 +58,7 @@ struct ContentView: View {
                         Text("Account")
                     }
                 }
-            .tag(2)
+                .tag(2)
         }
     }
 }
