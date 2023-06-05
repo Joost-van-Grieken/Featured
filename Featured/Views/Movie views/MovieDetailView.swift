@@ -19,7 +19,7 @@ struct MovieDetailView: View {
             }
             
             if movieDetailState.movie != nil {
-                MovieDetailListView(movie: self.movieDetailState.movie!, username: "", isLoggedIn: false)
+                MovieDetailListView(movie: self.movieDetailState.movie!, provider: nil, username: "", isLoggedIn: false)
             }
         }
         .onAppear {
@@ -36,7 +36,10 @@ struct MovieDetailListView: View {
     
     let movie: Movie
     @State private var selectedTrailer: MovieVideo?
-    let imageLoader = ImageLoader()
+//    let imageLoader = ImageLoader()
+    
+    let provider: Provider?
+    @ObservedObject private var imageLoader = ImageLoader()
     
     let username: String
     @State var isLoggedIn: Bool
@@ -50,6 +53,27 @@ struct MovieDetailListView: View {
         ScrollView {
             MovieBackdropCard(movie: movie)
             
+            HStack {
+                if let provider = provider {
+                    if provider.logo_path != nil {
+                        if self.imageLoader.image != nil {
+                            Image(uiImage: self.imageLoader.image!)
+                                .resizable()
+                                .aspectRatio(contentMode: .fill)
+                                .frame(height: 40)
+                        }
+                    }
+                } else {
+                    Text("No provider found")
+                }
+            }
+            .onAppear {
+                if let logoPath = provider?.logo_path {
+                    let url = URL(string: "https://image.tmdb.org/t/p/original\(logoPath)")
+                    self.imageLoader.loadImage(with: url!)
+                }
+            }
+            
             VStack(alignment: .leading, spacing: 10) {
                 HStack {
                     MoviePosterCard(movie: movie)
@@ -61,10 +85,7 @@ struct MovieDetailListView: View {
                     VStack(alignment: .leading, spacing: 10){
                         Spacer()
                         Text(movie.title)
-                            .font(
-                                .system(size: 20)
-                                .weight(.bold)
-                            )
+                            .font(.system(size: 20).weight(.bold))
                         Text(movie.yearText)
                         if let director = movie.directors?.first?.name {
                             Text(director)

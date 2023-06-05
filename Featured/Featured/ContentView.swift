@@ -13,7 +13,7 @@ struct ContentView: View {
     
     var body: some View {
         TabView (selection: $selection) {
-            MovieListView(username: "", isLoggedIn: true)
+            MovieListView(username: "", isLoggedIn: false)
                 .tabItem {
                     VStack {
                         if selection == 0 {
@@ -26,14 +26,7 @@ struct ContentView: View {
                 }
                 .tag(0)
             
-            RandomiserView(numOptions: .constant(3),
-                           year: .constant(nil),
-                           voteCountGte: .constant(nil),
-                           genres: .constant(nil),
-                           originalLanguage: .constant(nil),
-                           watchProviders: .constant(nil),
-                           watchRegion: .constant(nil),
-                           movie: Movie.stubbedMovie)
+            RandomiserView(movie: Movie.stubbedMovie)
                 .tabItem {
                     VStack {
                         if selection == 1 {

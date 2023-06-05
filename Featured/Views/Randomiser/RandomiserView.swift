@@ -15,23 +15,17 @@ struct RandomiserView: View {
     }
     
     @ObservedObject var store = RandomMovieStore()
+    
     @State private var isShowingFilters = false
 //    @State private var shouldCancelRandomiseButton = true
-
-    @Binding var numOptions: Int
-    @Binding var year: Int?
-    @Binding var voteCountGte: Double?
-    @Binding var genres: String?
-    @Binding var originalLanguage: String?
-    @Binding var watchProviders: String?
-    @Binding var watchRegion: String?
     
     let movie: Movie
+//    let provider: Provider
     @StateObject private var imageLoader = ImageLoader()
     
 //    @ObservedObject private var popularState = MovieListState()
     
-    @State var selectedList: Set<Filter> = []
+//    @State var selectedList: Set<Filter> = []
     @State private var filteredMovies: [Movie] = []
     @State private var movieTitles: [String] = []
     @State private var fetchedMovies = [Movie]()
@@ -51,7 +45,7 @@ struct RandomiserView: View {
                 .background(Color.accentColor)
                 .cornerRadius(10)
                 .sheet(isPresented: $isShowingFilters) {
-                    FilterView(numOptions: $numOptions, genres: $genres, movie: Movie.stubbedMovie)
+                    FilterView(providerModel: ProviderViewModel())
                                 }
 
                 Spacer()
@@ -71,6 +65,16 @@ struct RandomiserView: View {
                                     }
                                     MoviePosterCard(movie: movie)
                                         .frame(width: 260, height: 390)
+                                    
+//                                    if let logoPath = provider.logo_path {
+//                                        Image(logoPath) // Replace `logoPath` with the name of your image asset
+//                                            .resizable()
+//                                            .aspectRatio(contentMode: .fit)
+//                                            .frame(height: 40)
+//                                            .padding(.top, 5)
+//                                    }
+
+                                    
                                     Text(movie.genreText)
                                         .foregroundColor(CustomColor.textColor)
                                         .font(.system(size: 18).weight(.bold))
@@ -116,7 +120,7 @@ struct RandomiserView: View {
 //                    fetchRandomMovie(movieListState: MovieListState)
                 
                     var randomNumbers = [Int]()
-                    while randomNumbers.count < numOptions {
+                    while randomNumbers.count < 3 {
                         let randomNumber = Int.random(in: 1...2500)
                         randomNumbers.append(randomNumber)
                         print(randomNumber)
@@ -199,14 +203,7 @@ struct RandomiserView: View {
 
 struct RandomiserView_Previews: PreviewProvider {
     static var previews: some View {
-        RandomiserView(numOptions: .constant(3),
-                       year: .constant(nil),
-                       voteCountGte: .constant(nil),
-                       genres: .constant(nil),
-                       originalLanguage: .constant(nil),
-                       watchProviders: .constant(nil),
-                       watchRegion: .constant(nil),
-                       movie: Movie.stubbedMovie)
+        RandomiserView(movie: Movie.stubbedMovie)
     }
 }
 

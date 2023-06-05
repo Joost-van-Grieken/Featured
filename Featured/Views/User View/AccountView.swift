@@ -124,3 +124,52 @@ struct AccountView_Previews: PreviewProvider {
         AccountView(username: "", movie: Movie.stubbedMovie)
     }
 }
+
+
+//Button(action: {
+//    isShowingActionSheet.toggle()
+//}) {
+//    HStack {
+//        Text("Select a Region")
+//        Spacer()
+//        Text(selectedRegion?.english_name ?? "")
+//            .foregroundColor(.gray)
+//    }
+//}
+//}
+//
+//Spacer()
+//
+//Button(action: {
+//// Perform action with selected genres and region
+//print(selectedGenres)
+//print(selectedRegion ?? "")
+//}) {
+//Text("Done")
+//    .foregroundColor(.white)
+//    .frame(width: 300, height: 50)
+//    .background(Color.accentColor)
+//    .cornerRadius(10)
+//}
+//}
+//.navigationTitle("Filter")
+//.onAppear {
+//regionModel.fetchRegions()
+//}
+//.actionSheet(isPresented: $isShowingActionSheet) {
+//ActionSheet(title: Text("Select a Region"), buttons: getActionSheetButtons())
+//}
+//}
+//}
+//
+//private func getActionSheetButtons() -> [ActionSheet.Button] {
+//var buttons: [ActionSheet.Button] = []
+//for region in regionModel.regions {
+//let button = ActionSheet.Button.default(Text(region.english_name)) {
+//selectedRegion = region
+//}
+//buttons.append(button)
+//}
+//buttons.append(.cancel())
+//return buttons
+//}
