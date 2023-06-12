@@ -10,54 +10,71 @@ import Combine
 
 class RandomMovieStore: ObservableObject {
     @Published var randomMovie: Movie?
+    @Published var genres = [Genre]()
+    @Published var selectedGenres = Set<Int>()
     
     static let shared = RandomMovieStore()
-
-//    (page: Int, year: Int, voteCountGte: Int, genres: Int, originalLanguage: String, watchProviders: String, watchRegion: String, completion: @escaping (Result<MovieResponse, Error>) -> Void)
+    private let apiKey = "ae1c9875a55b3f3d23c889e07b973920"
+    let urlSession = URLSession.shared
+    let jsonDecoder = Utils.jsonDecoder
     
-    func discoverMovies(page: Int, genres: Int, completion: @escaping (Result<MovieResponse, Error>) -> Void) {
-        guard var urlComponents = URLComponents(string: "https://api.themoviedb.org/3/discover/movie") else {
-            completion(.failure(Error.self as! Error))
+    func discoverMovies(page: Int, genres: String, providers: String, completion: @escaping (Result<MovieResponse, MovieError>) -> ()) {
+        guard let url = URL(string: "https://api.themoviedb.org/3/discover/movie?api_key=\(apiKey)&include_adult=false&page=\(page)&with_genres=\(genres)&watch_region=NL&vote_average.ite=1&with_watch_providers=\(providers)") else {
+            completion(.failure(.invalidEndpoint))
             return
         }
-
-        // Set query parameters
-        urlComponents.queryItems = [
-            URLQueryItem(name: "api_key", value: "ae1c9875a55b3f3d23c889e07b973920"),
-            URLQueryItem(name: "page", value: String(page)),
-            URLQueryItem(name: "with_genres", value: String(genres))
-//            URLQueryItem(name: "language", value: "en-US"),
-//            URLQueryItem(name: "sort_by", value: "popularity.desc"),
-//            URLQueryItem(name: "year", value: String(year)),
-//            URLQueryItem(name: "vote_count.gte", value: String(voteCountGte)),
-//            URLQueryItem(name: "with_original_language", value: originalLanguage),
-//            URLQueryItem(name: "with_watch_providers", value: watchProviders),
-//            URLQueryItem(name: "watch_region", value: watchRegion)
-        ]
-
-        guard let url = urlComponents.url else {
-            completion(.failure(Error.self as! Error))
+        self.loadURLAndDecode(url: url, completion: completion)
+        print(url)
+    }
+    
+    private func loadURLAndDecode<D: Decodable>(url: URL, params: [String: String]? = nil, completion: @escaping (Result<D, MovieError>) -> ()) {
+        guard var urlComponents = URLComponents(url: url, resolvingAgainstBaseURL: false) else {
+            completion(.failure(.invalidEndpoint))
             return
         }
-
-        URLSession.shared.dataTask(with: url) { (data, response, error) in
-            if let error = error {
-                completion(.failure(error))
+        
+        var queryItems = [URLQueryItem(name: "api_key", value: apiKey)]
+        if let params = params {
+            queryItems.append(contentsOf: params.map { URLQueryItem(name: $0.key, value: $0.value) })
+        }
+        
+        urlComponents.queryItems = queryItems
+        
+        guard let finalURL = urlComponents.url else {
+            completion(.failure(.invalidEndpoint))
+            return
+        }
+        
+        urlSession.dataTask(with: finalURL) { [weak self] (data, response, error) in
+            guard let self = self else { return }
+            
+            if error != nil {
+                self.executeCompletionHandlerInMainThread(with: .failure(.apiError), completion: completion)
                 return
             }
-
+            
+            guard let httpResponse = response as? HTTPURLResponse, 200..<300 ~= httpResponse.statusCode else {
+                self.executeCompletionHandlerInMainThread(with: .failure(.invalidResponse), completion: completion)
+                return
+            }
             guard let data = data else {
-                completion(.failure(Error.self as! Error))
+                self.executeCompletionHandlerInMainThread(with: .failure(.noData), completion: completion)
                 return
             }
-
+            
             do {
-                let movieResponse = try JSONDecoder().decode(MovieResponse.self, from: data)
-                completion(.success(movieResponse))
+                let decodedResponse = try self.jsonDecoder.decode(D.self, from: data)
+                self.executeCompletionHandlerInMainThread(with: .success(decodedResponse), completion: completion)
             } catch {
-                completion(.failure(error))
+                self.executeCompletionHandlerInMainThread(with: .failure(.serializationError), completion: completion)
             }
         }.resume()
+    }
+    
+    private func executeCompletionHandlerInMainThread<D: Decodable>(with result: Result<D, MovieError>, completion: @escaping (Result<D, MovieError>) -> ()) {
+        DispatchQueue.main.async {
+            completion(result)
+        }
     }
 }
 
@@ -138,3 +155,51 @@ struct ProviderResponse: Codable {
     let results: [Provider]
 }
 
+// MARK: fetch provider for single movie
+struct MovieProviderResponse: Codable {
+    let results: Results
+
+    struct Results: Codable {
+        let NL: NL
+
+        struct NL: Codable {
+            let flatrate: [MovieProvider]
+        }
+    }
+}
+
+struct MovieProvider: Codable {
+    let provider_name: String
+}
+
+class MovieProviderViewModel: ObservableObject {
+    @Published var flatrateProviders: [MovieProvider] = []
+    
+    func fetchProviderData(id: Int) {
+        let apiKey = "ae1c9875a55b3f3d23c889e07b973920"
+        let watchRegion = "NL"
+        let urlString = "https://api.themoviedb.org/3/movie/\(id)/watch/providers?api_key=\(apiKey)&watch_region=\(watchRegion)"
+
+        guard let url = URL(string: urlString) else {
+            return
+        }
+
+        URLSession.shared.dataTask(with: url) { data, response, error in
+            if let error = error {
+                print("Error fetching data: \(error.localizedDescription)")
+                return
+            }
+
+            if let data = data {
+                do {
+                    let response = try JSONDecoder().decode(MovieProviderResponse.self, from: data)
+                    DispatchQueue.main.async {
+                        self.flatrateProviders = response.results.NL.flatrate
+                    }
+                } catch {
+                    print("Error decoding data: \(error.localizedDescription)")
+                }
+            }
+        }.resume()
+    }
+}

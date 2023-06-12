@@ -14,39 +14,38 @@ struct RandomiserView: View {
         static let textColor = Color("textColor")
     }
     
-    @ObservedObject var store = RandomMovieStore()
-    
-    @State private var isShowingFilters = false
-//    @State private var shouldCancelRandomiseButton = true
-    
-    let movie: Movie
-//    let provider: Provider
+    @StateObject var store = RandomMovieStore()
     @StateObject private var imageLoader = ImageLoader()
     
-//    @ObservedObject private var popularState = MovieListState()
-    
-//    @State var selectedList: Set<Filter> = []
+    @State private var isShowingFilters = false
     @State private var filteredMovies: [Movie] = []
     @State private var movieTitles: [String] = []
     @State private var fetchedMovies = [Movie]()
     @State var randomNumber = [Int]()
+    
+    @State private var numOption: Int = 3
+    @StateObject var selectedGenresViewModel = SelectedGenresViewModel()
+    @StateObject var selectedProviderViewModel = SelectedProviderViewModel()
     
     var body: some View {
         NavigationView {
             VStack {
                 Spacer()
                     .frame(height: 10)
-                Button("Filters") {
+                
+                Button(action: {
                     isShowingFilters.toggle()
+                }) {
+                    Text("Filters")
+                        .font(.headline)
+                        .foregroundColor(.white)
+                        .frame(width:300, height: 50)
+                        .background(Color.accentColor)
+                        .cornerRadius(10)
+                        .sheet(isPresented: $isShowingFilters) {
+                            FilterView(numOption: $numOption, selectedGenresViewModel: selectedGenresViewModel, selectedProviderViewModel: selectedProviderViewModel)
+                            }
                 }
-                .font(.headline)
-                .foregroundColor(.white)
-                .frame(width:300, height: 50)
-                .background(Color.accentColor)
-                .cornerRadius(10)
-                .sheet(isPresented: $isShowingFilters) {
-                    FilterView(providerModel: ProviderViewModel())
-                                }
 
                 Spacer()
                 
@@ -56,25 +55,14 @@ struct RandomiserView: View {
                         ForEach(filteredMovies, id: \.self) { movie in
                             NavigationLink(destination: MovieDetailView(movieId: movie.id)) {
                                 VStack(alignment: .leading) {
-                                    HStack {
-//                                        Text("\(numOptions / numOptions)")
-                                        Text(movie.title)
-                                            .font(.system(size: 22).weight(.bold))
-                                            .foregroundColor(CustomColor.textColor)
-                                            .lineLimit(1)
-                                    }
+                                    Text(movie.title)
+                                        .font(.system(size: 22).weight(.bold))
+                                        .foregroundColor(CustomColor.textColor)
+                                        .lineLimit(1)
+                                        
                                     MoviePosterCard(movie: movie)
                                         .frame(width: 260, height: 390)
-                                    
-//                                    if let logoPath = provider.logo_path {
-//                                        Image(logoPath) // Replace `logoPath` with the name of your image asset
-//                                            .resizable()
-//                                            .aspectRatio(contentMode: .fit)
-//                                            .frame(height: 40)
-//                                            .padding(.top, 5)
-//                                    }
 
-                                    
                                     Text(movie.genreText)
                                         .foregroundColor(CustomColor.textColor)
                                         .font(.system(size: 18).weight(.bold))
@@ -115,53 +103,34 @@ struct RandomiserView: View {
                 }
 
                 Spacer()
-
-                Button(action: {
-//                    fetchRandomMovie(movieListState: MovieListState)
                 
-                    var randomNumbers = [Int]()
-                    while randomNumbers.count < 3 {
-                        let randomNumber = Int.random(in: 1...2500)
-                        randomNumbers.append(randomNumber)
-                        print(randomNumber)
-                    }
-
-//                    var fetchedRandomMovies = [Movie]()
-
-//                    for randomNumbers in randomNumber {
-//                        MovieStore.shared.fetchMovies(from: .popular, page: 1) { result in
-//                            switch result {
-//                            case .success(let movies):
-//                                fetchedRandomMovies.append(movie)
-//                            case .failure(let error):
-//                                print(error.localizedDescription)
-//                            }
-//                        }
-//                    }
-
-                    var fetchedMovies = [Movie]()
-                    let dispatchGroup = DispatchGroup()
-
-                    for id in randomNumbers {
-                        dispatchGroup.enter()
-                        print("Fetching movies from: randomiser")
-                        MovieStore.shared.fetchMovie(id: id) { result in
-                            switch result {
-                            case .success(let movie):
-                                fetchedMovies.append(movie)
-                            case .failure(let error):
-                                print(error.localizedDescription)
+                Button(action: {
+                    Task {
+                        await performTask(numOption: numOption, selectedGenresViewModel: selectedGenresViewModel, selectedProviderViewModel: selectedProviderViewModel) { movieIDs in
+                            var fetchedMovies = [Movie]()
+                            let dispatchGroup = DispatchGroup()
+                            
+                            for id in movieIDs {
+                                dispatchGroup.enter()
+                                print("Fetching movie with ID: \(id)")
+                                MovieStore.shared.fetchMovie(id: id) { result in
+                                    switch result {
+                                    case .success(let movie):
+                                        fetchedMovies.append(movie)
+                                    case .failure(let error):
+                                        print(error.localizedDescription)
+                                    }
+                                    dispatchGroup.leave()
+                                }
                             }
-                            dispatchGroup.leave()
+                            
+                            dispatchGroup.notify(queue: .main) {
+                                self.filteredMovies = fetchedMovies
+                                self.movieTitles = fetchedMovies.map({ $0.title })
+                                print(self.movieTitles)
+                            }
                         }
                     }
-
-                    dispatchGroup.notify(queue: .main) {
-                        self.filteredMovies = fetchedMovies
-                        self.movieTitles = fetchedMovies.map({ $0.title })
-                        print(self.movieTitles)
-                    }
-                    
                 }) {
                     Text("Randomise")
                         .font(.headline)
@@ -170,101 +139,80 @@ struct RandomiserView: View {
                         .background(Color.accentColor)
                         .cornerRadius(10)
                 }
+
                 Spacer()
                     .frame(height: 10)
             }
         }
         .navigationTitle("Randomiser")
     }
-    
-//    func fetchRandomMovie(movieListState: MovieListState) {
-//        let numberOfPages = 3
-//        let resultsPerPage = 20
-//        let totalResults = numberOfPages * resultsPerPage
-//        let randomNumber = Int.random(in: 1...totalResults)
-//
-//        let dispatchGroup = DispatchGroup()
-//
-//        for pageNumber in 1...numberOfPages {
-//            dispatchGroup.enter()
-//            movieListState.loadMovies(from: .popular, page: pageNumber) { _ in
-//                if let movieID = movieListState.movies.randomElement()?.id {
-//                    movieListState.movieID = movieID
-//                }
-//                dispatchGroup.leave()
-//            }
-//        }
-//
-//        dispatchGroup.notify(queue: .main) {
-//            print("All pages fetched and processed.")
-//        }
-//    }
 }
 
 struct RandomiserView_Previews: PreviewProvider {
     static var previews: some View {
-        RandomiserView(movie: Movie.stubbedMovie)
+        RandomiserView()
     }
 }
 
-//// Step 1: Get 3 random numbers from 1 to 50
-//func getRandomPageNumbers() async -> [Int] {
-//    return (1...50).randomSample(count: 3)
-//}
-//
-//// Step 2: Link to a function that applies the numbers to the selected genres
-//func applyFiltersToAPI(pages: [Int], genres: Int) async {
-//    await RandomMovieStore.shared.discoverMovies(pages: pages, genres: genres) { result in
-//        // Handle the API response here
-//        switch result {
-//        case .success(let movieResponse):
-//            // Perform actions with the movie response
-//            print("API call successful. Received movie response: \(movieResponse)")
-//        case .failure(let error):
-//            // Handle the API error
-//            print("API call failed with error: \(error)")
-//        }
-//    }
-//}
+// Step 1: Get random page numbers
+func getRandomPageNumbers(count: Int) -> [Int] {
+    let randomNumbers = Array(1...50).shuffled().prefix(count)
+    return Array(randomNumbers)
+}
 
-//// Step 3: Generate 3 random numbers from 1 to 20
-//func getRandomMovieCounts() async -> [Int] {
-//    return (1...20).randomSample(count: 3)
-//}
-//
-//// Step 4: Find the ID of a movie
-//func findMovieID() async -> Int {
-//    let randomMovieID = // Generate a random movie ID based on your requirements
-//    // Perform actions with the movie ID
-//    print("Randomly selected movie ID: \(randomMovieID)")
-//    return randomMovieID
-//}
-//
-//// Helper function to generate random samples from a range
-//extension Range where Bound == Int {
-//    func randomSample(count: Int) -> [Int] {
-//        guard count <= self.count else {
-//            fatalError("Sample count exceeds range")
-//        }
-//        let shuffled = self.shuffled()
-//        return Array(shuffled.prefix(count))
-//    }
-//}
-//
-//// Main async function
-//func performTask() async {
-//    let pageNumbers = await getRandomPageNumbers()
-//    let selectedGenres = 123 // Provide the selected genre ID here
-//
-//    await applyFiltersToAPI(pages: pageNumbers, genres: selectedGenres)
-//
-//    let movieCounts = await getRandomMovieCounts()
-//    let randomMovieID = await findMovieID()
-//
-//    // Perform further actions with the page numbers, movie counts, and random movie ID
-//}
-//
-//// Execute the task
-//Task {
-//    await performTask()
-//}
+// Step 2: Link to a function that applies the numbers to the selected genres
+func applyFiltersAndFindMovieIDs(pages: [Int], genres: [Int], providers: [Int], completion: @escaping ([Int]) -> Void) {
+    var movieIDs = [Int]()
+    let group = DispatchGroup()
+    
+    for page in pages {
+        group.enter()
+        
+        let genreIDs = genres.map(String.init).joined(separator: ",")
+        let providerIDs = providers.map(String.init).joined(separator: ",")
+        
+        RandomMovieStore.shared.discoverMovies(page: page, genres: genreIDs, providers: providerIDs) { result in
+            switch result {
+            case .success(let response):
+                if let randomMovie = response.results.randomElement() {
+                    let randomMovieID = randomMovie.id
+                    print("Random movie ID:", randomMovieID)
+                    movieIDs.append(randomMovieID)
+                }
+            case .failure(let error):
+                print("API call failed with error: \(error)")
+            }
+            group.leave()
+        }
+    }
+    
+    group.notify(queue: .main) {
+        print("All API calls completed")
+        completion(movieIDs)
+    }
+}
+
+// Step 3: Perform task
+func performTask(numOption: Int, selectedGenresViewModel: SelectedGenresViewModel, selectedProviderViewModel: SelectedProviderViewModel, completion: @escaping ([Int]) -> Void) {
+    let pageNumbers = getRandomPageNumbers(count: numOption)
+    print("number of options", numOption)
+    print("Generated random page numbers:", pageNumbers)
+    
+    let genreIDs = selectedGenresViewModel.selectedGenres.map { $0.id }
+    let providerIDs = selectedProviderViewModel.selectedProvider.map { $0.provider_id }
+    
+    applyFiltersAndFindMovieIDs(pages: pageNumbers, genres: genreIDs, providers: providerIDs) { ids in
+        print("Task completed")
+        completion(ids)
+    }
+}
+
+// Main function
+func main() {
+    let selectedGenresViewModel = SelectedGenresViewModel()
+    let selectedProviderViewModel = SelectedProviderViewModel()
+    
+    performTask(numOption: 3, selectedGenresViewModel: selectedGenresViewModel, selectedProviderViewModel: selectedProviderViewModel) { movieIDs in
+        // Handle the movieIDs result here
+    }
+}

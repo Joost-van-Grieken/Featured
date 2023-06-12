@@ -12,7 +12,6 @@ protocol MovieService {
     func fetchMovies(from endpoint: MovieListEndpoint, page: Int, completion: @escaping (Result<MovieResponse, MovieError>) -> ())
     func fetchMovie(id: Int, completion: @escaping (Result<Movie, MovieError>) -> ())
     func searchMovie(query: String, completion: @escaping (Result<MovieResponse, MovieError>) -> ())
-//    func discoverMovies(from endpoint: dicoverEndpoint, completion: @escaping (Result<MovieResponse, MovieError>) -> ())
 }
 
 enum MovieListEndpoint: String, CaseIterable, Identifiable {
@@ -34,18 +33,6 @@ enum MovieListEndpoint: String, CaseIterable, Identifiable {
         }
     }
 }
-
-//enum dicoverEndpoint: String, CaseIterable, Identifiable {
-//    var id: String { rawValue }
-//
-//    case withGenres = "with_genres"
-//
-//    var description: String {
-//        switch self {
-//        case .withGenres: return "Genres"
-//        }
-//    }
-//}
 
 enum MovieError: Error, CustomNSError {
     

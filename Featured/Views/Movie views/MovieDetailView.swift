@@ -36,7 +36,6 @@ struct MovieDetailListView: View {
     
     let movie: Movie
     @State private var selectedTrailer: MovieVideo?
-//    let imageLoader = ImageLoader()
     
     let provider: Provider?
     @ObservedObject private var imageLoader = ImageLoader()
@@ -44,36 +43,30 @@ struct MovieDetailListView: View {
     let username: String
     @State var isLoggedIn: Bool
 
-    @State private var selectedScore: Int = 1
+    @State private var selectedScore = Int()
     @State private var watchedOn = false
     @State private var savedOn = false
     @State private var isMovieSaved: Bool = false
+    
+    @StateObject private var viewModel = MovieProviderViewModel()
     
     var body: some View {
         ScrollView {
             MovieBackdropCard(movie: movie)
             
             HStack {
-                if let provider = provider {
-                    if provider.logo_path != nil {
-                        if self.imageLoader.image != nil {
-                            Image(uiImage: self.imageLoader.image!)
-                                .resizable()
-                                .aspectRatio(contentMode: .fill)
-                                .frame(height: 40)
-                        }
-                    }
+                if !viewModel.flatrateProviders.isEmpty {
+                    Text("Stream on: ")
+                    + Text(viewModel.flatrateProviders.map { $0.provider_name }.joined(separator: ", "))
+                        .font(.headline)
                 } else {
-                    Text("No provider found")
+                    Text("No provider available")
                 }
             }
             .onAppear {
-                if let logoPath = provider?.logo_path {
-                    let url = URL(string: "https://image.tmdb.org/t/p/original\(logoPath)")
-                    self.imageLoader.loadImage(with: url!)
-                }
+                viewModel.fetchProviderData(id: movie.id)
             }
-            
+
             VStack(alignment: .leading, spacing: 10) {
                 HStack {
                     MoviePosterCard(movie: movie)
@@ -82,7 +75,7 @@ struct MovieDetailListView: View {
                     Spacer()
                         .frame(width: 20)
                     
-                    VStack(alignment: .leading, spacing: 10){
+                    VStack(alignment: .leading, spacing: 10) {
                         Spacer()
                         Text(movie.title)
                             .font(.system(size: 20).weight(.bold))
@@ -96,6 +89,46 @@ struct MovieDetailListView: View {
                         }
                         Text(movie.durationText)
                         
+                        Spacer()
+                        
+                        HStack {
+                            if UserDefaults.standard.getLoggedIn() {
+                                VStack {
+//                                    if let selectedScore = selectedScore {
+//                                        Text("You rated")
+//                                        Text("\(selectedScore)/10")
+//                                    } else {
+//                                        Text("Add a score")
+//                                    }
+                                    
+                                    Picker("Add a score", selection: $selectedScore) {
+                                        Text("Add a score").tag(nil as Int?)
+                                        
+                                        ForEach(1...10, id: \.self) { score in
+                                            Text("\(score)/10").tag(score)
+                                        }
+                                    }
+                                    .pickerStyle(DefaultPickerStyle())
+                                    .frame(width: 150)
+                                    .overlay(
+                                        RoundedRectangle(cornerRadius: 10)
+                                            .stroke(Color.accentColor, lineWidth: 2)
+                                    )
+                                    .labelsHidden()
+                                }
+                                
+                            } else {
+                                // Handle UI when user is not logged in
+                                Text("User not logged in")
+                                    .foregroundColor(CustomColor.locked)
+                                    .padding(10)
+                                    .overlay(
+                                        RoundedRectangle(cornerRadius: 10).stroke(CustomColor.locked, lineWidth: 2))
+                            }
+                        }
+                        
+                        Divider()
+                        
                         HStack {
                             Image("Heart (rated)")
                                 .resizable()
@@ -105,34 +138,7 @@ struct MovieDetailListView: View {
                                 Text(movie.ratingText).foregroundColor(.accentColor)
                                     .font(.system(size: 18) .weight(.medium))
                                 Text(movie.formattedVoteCount).foregroundColor(.accentColor)
-                                    .font(.system(size: 12))
-                            }
-                        }
-                        
-                        Spacer()
-                        
-                        HStack {
-                            if UserDefaults.standard.getLoggedIn() {
-                                // Handle UI when user is logged in
-                                Picker("Add a score", selection: $selectedScore) {
-                                    ForEach(1...10, id: \.self) { score in
-                                        Text("\(score)")
-                                    }
-                                }
-                                .padding(10)
-                                .overlay(
-                                    RoundedRectangle(cornerRadius: 10)
-                                        .stroke(Color.accentColor, lineWidth: 2)
-                                )
-                            } else {
-                                // Handle UI when user is not logged in
-                                Text("Account required")
-                                    .foregroundColor(CustomColor.locked)
-                                    .padding(10)
-                                    .overlay(
-                                        RoundedRectangle(cornerRadius: 10)
-                                            .stroke(CustomColor.locked, lineWidth: 2)
-                                    )
+                                    .font(.system(size: 16))
                             }
                         }
                     }
@@ -157,16 +163,16 @@ struct MovieDetailListView: View {
                             watchedOn.toggle()
                         }
                     }) {
-                        VStack {
+                        VStack(spacing: 3) {
                             if !UserDefaults.standard.getLoggedIn() {
                                 Image("Watch (locked)")
                                 Text("watch").foregroundColor(CustomColor.locked)
                             } else if watchedOn {
                                 Image("Watched")
-                                Text("watched")
+                                Text("Tracked")
                             } else {
                                 Image("Watch")
-                                Text("watch")
+                                Text("Track")
                             }
                         }
                     }
@@ -188,7 +194,7 @@ struct MovieDetailListView: View {
                             savedOn.toggle()
                         }
                     }) {
-                        VStack {
+                        VStack(spacing: 3) {
                             if !UserDefaults.standard.getLoggedIn() {
                                 Image("Save (locked)")
                                 Text("Save").foregroundColor(CustomColor.locked)
@@ -197,7 +203,7 @@ struct MovieDetailListView: View {
                                 Text("saved")
                             } else {
                                 Image("Save")
-                                Text("save")
+                                Text("Save")
                             }
                         }
                     }

@@ -8,31 +8,44 @@
 import SwiftUI
 
 struct FilterView: View {
-    @ObservedObject var genreModel = GenreViewModel()
-    @ObservedObject var providerModel: ProviderViewModel
+    @Environment(\.presentationMode) var presentationMode
+    @Binding var numOption: Int
+    @StateObject var selectedGenresViewModel = SelectedGenresViewModel()
+    @StateObject var selectedProviderViewModel = SelectedProviderViewModel()
     
-    @State private var selectedGenres: Set<Genre> = []
-    @State private var selectedProvider: Set<Provider> = []
-
+    struct CustomColor {
+        static let textColor = Color("textColor")
+    }
+    
     var body: some View {
         NavigationView {
             VStack {
                 List {
-                    NavigationLink(destination: GenreView(viewModel: genreModel, selectedGenres: $selectedGenres)) {
+                    Picker("Number of options", selection: $numOption) {
+                        ForEach(1...10, id: \.self) { value in
+                            Text("\(value)").tag(value)
+                                .foregroundColor(CustomColor.textColor)
+                        }
+                    }
+                    .pickerStyle(.menu)
+                    
+                    NavigationLink(destination: GenreView(viewModel: GenreViewModel())
+                                    .environmentObject(selectedGenresViewModel)) {
                         HStack {
                             Text("Genres")
-                            if !selectedGenres.isEmpty {
-                                Text(selectedGenreNames())
+                            if !selectedGenresViewModel.selectedGenres.isEmpty {
+                                Text(selectedGenresViewModel.selectedGenreNames())
                                     .foregroundColor(.gray)
                             }
                         }
                     }
                     
-                    NavigationLink(destination: ProviderView(viewModel: providerModel, selectedProviders: $selectedProvider)) {
+                    NavigationLink(destination: ProviderView(viewModel: ProviderViewModel())
+                                    .environmentObject(selectedProviderViewModel)) { // Pass the SelectedProviderViewModel as an environment object
                         HStack {
                             Text("Providers")
-                            if !selectedProvider.isEmpty {
-                                Text(selectedProviderNames())
+                            if !selectedProviderViewModel.selectedProvider.isEmpty {
+                                Text(selectedProviderViewModel.selectedProviderNames())
                                     .foregroundColor(.gray)
                             }
                         }
@@ -42,9 +55,9 @@ struct FilterView: View {
                 Spacer()
                 
                 Button(action: {
-                    // Perform action with selected genres and providers
-                    print(selectedGenres)
-                    print(selectedProvider)
+                    presentationMode.wrappedValue.dismiss()
+                    print(selectedGenresViewModel.selectedGenres)
+                    print(selectedProviderViewModel.selectedProvider)
                 }) {
                     Text("Done")
                         .foregroundColor(.white)
@@ -54,32 +67,36 @@ struct FilterView: View {
                 }
             }
             .navigationTitle("Filter")
-            .onAppear {
-                genreModel.fetchGenres()
-                providerModel.fetchProviders()
-            }
         }
-    }
-
-    private func selectedGenreNames() -> String {
-        return selectedGenres.map { $0.name }.joined(separator: ", ")
-    }
-
-    private func selectedProviderNames() -> String {
-        return selectedProvider.map { $0.provider_name }.joined(separator: ", ")
     }
 }
 
 struct FilterView_Previews: PreviewProvider {
     static var previews: some View {
-        FilterView(providerModel: ProviderViewModel())
+        FilterView(numOption: .constant(3))
+    }
+}
+
+class SelectedGenresViewModel: ObservableObject {
+    @Published var selectedGenres: Set<Genre> = []
+    
+    func selectedGenreNames() -> String {
+        return selectedGenres.map { $0.name }.joined(separator: ", ")
+    }
+}
+
+class SelectedProviderViewModel: ObservableObject {
+    @Published var selectedProvider: Set<Provider> = []
+    
+    func selectedProviderNames() -> String {
+        return selectedProvider.map { $0.provider_name }.joined(separator: ", ")
     }
 }
 
 struct GenreView: View {
     @Environment(\.presentationMode) var presentationMode
+    @EnvironmentObject var selectedGenresViewModel: SelectedGenresViewModel
     @ObservedObject var viewModel: GenreViewModel
-    @Binding var selectedGenres: Set<Genre>
     
     struct CustomColor {
         static let textColor = Color("textColor")
@@ -95,7 +112,7 @@ struct GenreView: View {
                         Text(genre.name)
                             .foregroundColor(CustomColor.textColor)
                         Spacer()
-                        if selectedGenres.contains(genre) {
+                        if selectedGenresViewModel.selectedGenres.contains(genre) {
                             Image(systemName: "checkmark")
                                 .foregroundColor(Color.accentColor)
                         }
@@ -105,6 +122,7 @@ struct GenreView: View {
             
             Button(action: {
                 dismissGenreView()
+                print(selectedGenresViewModel.selectedGenres)
             }) {
                 Text("Submit")
                     .foregroundColor(.white)
@@ -113,13 +131,16 @@ struct GenreView: View {
                     .cornerRadius(10)
             }
         }
+        .onAppear {
+            viewModel.fetchGenres()
+        }
     }
     
     private func toggleGenreSelection(_ genre: Genre) {
-        if selectedGenres.contains(genre) {
-            selectedGenres.remove(genre)
+        if selectedGenresViewModel.selectedGenres.contains(genre) {
+            selectedGenresViewModel.selectedGenres.remove(genre)
         } else {
-            selectedGenres.insert(genre)
+            selectedGenresViewModel.selectedGenres.insert(genre)
         }
     }
     
@@ -130,8 +151,8 @@ struct GenreView: View {
 
 struct ProviderView: View {
     @Environment(\.presentationMode) var presentationMode
+    @EnvironmentObject var selectedProviderViewModel: SelectedProviderViewModel
     @ObservedObject var viewModel: ProviderViewModel
-    @Binding var selectedProviders: Set<Provider>
     
     struct CustomColor {
         static let textColor = Color("textColor")
@@ -147,7 +168,7 @@ struct ProviderView: View {
                         Text(provider.provider_name)
                             .foregroundColor(CustomColor.textColor)
                         Spacer()
-                        if selectedProviders.contains(provider) {
+                        if selectedProviderViewModel.selectedProvider.contains(provider) {
                             Image(systemName: "checkmark")
                                 .foregroundColor(Color.accentColor)
                         }
@@ -157,6 +178,7 @@ struct ProviderView: View {
             
             Button(action: {
                 dismissProviderView()
+                print(selectedProviderViewModel.selectedProvider)
             }) {
                 Text("Submit")
                     .foregroundColor(.white)
@@ -165,13 +187,16 @@ struct ProviderView: View {
                     .cornerRadius(10)
             }
         }
+        .onAppear {
+            viewModel.fetchProviders()
+        }
     }
     
     private func toggleProviderSelection(_ provider: Provider) {
-        if selectedProviders.contains(provider) {
-            selectedProviders.remove(provider)
+        if selectedProviderViewModel.selectedProvider.contains(provider) {
+            selectedProviderViewModel.selectedProvider.remove(provider)
         } else {
-            selectedProviders.insert(provider)
+            selectedProviderViewModel.selectedProvider.insert(provider)
         }
     }
     

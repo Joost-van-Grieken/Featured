@@ -20,7 +20,7 @@ class MovieStore: MovieService {
     let jsonDecoder = Utils.jsonDecoder
     
     func fetchMovies(from endpoint: MovieListEndpoint, page: Int, completion: @escaping (Result<MovieResponse, MovieError>) -> ()) {
-        guard let url = URL(string: "\(baseAPIURL)/movie/\(endpoint.rawValue)?api_key=\(apiKey)&page=\(page)&include_adult=false") else {
+        guard let url = URL(string: "\(baseAPIURL)/movie/\(endpoint.rawValue)?api_key=\(apiKey)&page=\(page)&include_adult=false&watch_region=NL") else {
             completion(.failure(.invalidEndpoint))
             return
         }
@@ -37,7 +37,7 @@ class MovieStore: MovieService {
 //    }
     
     func fetchMovie(id: Int, completion: @escaping (Result<Movie, MovieError>) -> ()) {
-        guard let url = URL(string: "\(baseAPIURL)/movie/\(id)&include_adult=false") else {
+        guard let url = URL(string: "\(baseAPIURL)/movie/\(id)&include_adult=false&watch_region=NL") else {
             completion(.failure(.invalidEndpoint))
             return
         }
@@ -45,14 +45,6 @@ class MovieStore: MovieService {
             "append_to_response": "videos,credits"
         ], completion: completion)
     }
-    
-//    func discoverMovies(from endpoint: dicoverEndpoint, page: Int, completion: @escaping (Result<MovieResponse, MovieError>) -> ()) {
-//        guard let url = URL(string: "\(baseAPIURL)/discover/movie/\(endpoint.rawValue)?api_key=\(apiKey)&page=\(page)") else {
-//            completion(.failure(.invalidEndpoint))
-//            return
-//        }
-//        self.loadURLAndDecode(url: url, completion: completion)
-//    }
     
     func searchMovie(query: String, completion: @escaping (Result<MovieResponse, MovieError>) -> ()) {
         guard let url = URL(string: "\(baseAPIURL)/search/movie") else {

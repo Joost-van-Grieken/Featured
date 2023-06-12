@@ -52,11 +52,7 @@ struct MovieFullListView: View {
                                 Button(action: {
                                     // Watch button
                                     if !UserDefaults.standard.getLoggedIn() {
-                                        // Handle action when user is not logged in
-                                        // For example, display an alert or navigate to the login screen
-                                        // Add your code here
                                     } else {
-                                        // Handle action when user is logged in
                                         let watchedOn = UserDefaults.standard.getWatchedState(forMovieId: movie.id)
                                         UserDefaults.standard.setWatchedState(value: !watchedOn, forMovieId: movie.id)
                                     }
@@ -107,13 +103,10 @@ struct MovieFullListView: View {
 //                                
                                 Button(action: {
                                     // Save button
-                                    if UserDefaults.standard.getLoggedIn() {
-                                        if savedOn {
-                                            UserDefaults.standard.setSavedState(value: false, forMovieId: movie.id)
-                                        } else {
-                                            UserDefaults.standard.setSavedState(value: true, forMovieId: movie.id)
-                                        }
-                                        savedOn.toggle()
+                                    if !UserDefaults.standard.getLoggedIn() {
+                                    } else {
+                                        let savedOn = UserDefaults.standard.getSavedState(forMovieId: movie.id)
+                                        UserDefaults.standard.setSavedState(value: !savedOn, forMovieId: movie.id)
                                     }
                                 }) {
                                     VStack {

@@ -10,6 +10,7 @@ import Foundation
 struct MovieResponse: Decodable {
     
     let results: [Movie]
+//    let pagination: Pagination
 }
 
 struct Movie: Decodable, Identifiable, Hashable {
@@ -30,7 +31,6 @@ struct Movie: Decodable, Identifiable, Hashable {
     let voteCount: Int
     let runtime: Int?
     let releaseDate: String?
-    var watchProviders: [String: WatchProvider]?
     
     let genres: [MovieGenre]?
     let credits: MovieCredit?
@@ -157,6 +157,10 @@ struct Movie: Decodable, Identifiable, Hashable {
     
 }
 
+struct Pagination: Decodable {
+    let total_pages: Int
+}
+
 struct MovieGenre: Decodable {
     
     let name: String
@@ -200,27 +204,4 @@ struct MovieVideo: Decodable, Identifiable {
         }
         return URL(string: "https://youtube.com/watch?v=\(key)")
     }
-}
-
-struct WatchProviders: Decodable {
-    let results: WatchProviderResults
-}
-
-struct WatchProviderResults: Decodable {
-    let US: WatchProvider?
-    let NL: WatchProvider?
-    // Add other countries as needed
-}
-
-struct WatchProvider: Decodable {
-    let link: String
-    let rent: [WatchOption]?
-    let buy: [WatchOption]?
-    let flatrate: [WatchOption]?
-}
-
-struct WatchOption: Decodable {
-    let providerId: Int
-    let providerName: String
-    let logoPath: String?
 }

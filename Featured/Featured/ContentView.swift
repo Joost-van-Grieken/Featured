@@ -26,7 +26,7 @@ struct ContentView: View {
                 }
                 .tag(0)
             
-            RandomiserView(movie: Movie.stubbedMovie)
+            RandomiserView()
                 .tabItem {
                     VStack {
                         if selection == 1 {
