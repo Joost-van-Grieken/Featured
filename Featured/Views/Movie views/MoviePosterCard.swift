@@ -5,6 +5,8 @@
 //  Created by Joost van Grieken on 06/04/2023.
 //
 
+// MARK: Hantert de posters van de film
+
 import SwiftUI
 
 struct MoviePosterCard: View {

@@ -5,6 +5,8 @@
 //  Created by Joost van Grieken on 23/05/2023.
 //
 
+// MARK: Hantert de volledige film lijst
+
 import SwiftUI
 
 struct MovieFullListView: View {
@@ -49,12 +51,11 @@ struct MovieFullListView: View {
                             HStack {
                                 Spacer()
                                 
-                                Button(action: {
-                                    // Watch button
+                                Button(action: { // Watch button
                                     if !UserDefaults.standard.getLoggedIn() {
                                     } else {
-                                        let watchedOn = UserDefaults.standard.getWatchedState(forMovieId: movie.id)
-                                        UserDefaults.standard.setWatchedState(value: !watchedOn, forMovieId: movie.id)
+                                        let watchedOn = UserDefaults.standard.getWatchedState(id: movie.id)
+                                        UserDefaults.standard.setWatchedState(value: !watchedOn, id: movie.id)
                                     }
                                 }) {
                                     VStack {
@@ -62,7 +63,7 @@ struct MovieFullListView: View {
                                             Image("Watch (locked)")
                                                 .resizable()
                                                 .frame(width: 25, height: 25)
-                                        } else if UserDefaults.standard.getWatchedState(forMovieId: movie.id) {
+                                        } else if UserDefaults.standard.getWatchedState(id: movie.id) {
                                             Image("Watched")
                                                 .resizable()
                                                 .frame(width: 25, height: 25)
@@ -77,32 +78,7 @@ struct MovieFullListView: View {
                                 
                                 Spacer()
                                 
-//                                Button(action: {
-//                                    // Save button
-//                                    if UserDefaults.standard.getLoggedIn() {
-//                                        let savedState = UserDefaults.standard.getSavedState(forMovieId: movie.id)
-//                                        UserDefaults.standard.setSavedState(value: !savedState, forMovieId: movie.id)
-//                                    }
-//                                }) {
-//                                    VStack {
-//                                        if !UserDefaults.standard.getLoggedIn() {
-//                                            Image("Save (locked)")
-//                                                .resizable()
-//                                                .frame(width: 25, height: 25)
-//                                        } else if UserDefaults.standard.getSavedState(forMovieId: movie.id) {
-//                                            Image("Saved")
-//                                                .resizable()
-//                                                .frame(width: 25, height: 25)
-//                                        } else {
-//                                            Image("Save")
-//                                                .resizable()
-//                                                .frame(width: 25, height: 25)
-//                                        }
-//                                    }
-//                                }
-//                                
-                                Button(action: {
-                                    // Save button
+                                Button(action: { // Save button
                                     if !UserDefaults.standard.getLoggedIn() {
                                     } else {
                                         let savedOn = UserDefaults.standard.getSavedState(forMovieId: movie.id)

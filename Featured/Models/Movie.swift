@@ -5,12 +5,14 @@
 //  Created by Joost van Grieken on 06/04/2023.
 //
 
+// MARK: Link tussen API en App
+// Dit bestand verwerkt alle informatie die van de API call komt.
+
 import Foundation
 
 struct MovieResponse: Decodable {
     
     let results: [Movie]
-//    let pagination: Pagination
 }
 
 struct Movie: Decodable, Identifiable, Hashable {
@@ -57,10 +59,6 @@ struct Movie: Decodable, Identifiable, Hashable {
         return URL(string: "https://image.tmdb.org/t/p/w500\(posterPath ?? "")")!
     }
     
-//    var genreText: String {
-//        genres?.first?.name ?? "n/a"
-//    }
-    
     var genreText: String {
         guard let genres = genres, !genres.isEmpty else {
             return "n/a"
@@ -69,15 +67,6 @@ struct Movie: Decodable, Identifiable, Hashable {
         let genreNames = genres.map { $0.name }
         return genreNames.joined(separator: ", ")
     }
-
-    
-//    var ratingText: String {
-//            let rating = Int(voteAverage)
-//            let ratingText = (0..<rating).reduce("") { (acc, _) -> String in
-//                return acc + "★"
-//            }
-//            return ratingText
-//        }
     
     var ratingText: String {
         let rating = voteAverage * 10
@@ -123,13 +112,6 @@ struct Movie: Decodable, Identifiable, Hashable {
         
         return "\(runtime) minutes"
     }
-
-//    var durationText: String {
-//        guard let runtime = self.runtime, runtime > 0 else {
-//            return "n/a"
-//        }
-//        return Movie.durationFormatter.string(from: TimeInterval(runtime) * 60) ?? "n/a"
-//    }
     
     var cast: [MovieCast]? {
         credits?.cast
@@ -154,11 +136,6 @@ struct Movie: Decodable, Identifiable, Hashable {
     var youtubeTrailers: [MovieVideo]? {
         videos?.results.filter { $0.youtubeURL != nil }
     }
-    
-}
-
-struct Pagination: Decodable {
-    let total_pages: Int
 }
 
 struct MovieGenre: Decodable {

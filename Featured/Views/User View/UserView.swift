@@ -5,6 +5,8 @@
 //  Created by Joost van Grieken on 18/04/2023.
 //
 
+// MARK: Hantert de userView
+
 import SwiftUI
 
 struct UserView: View {

@@ -5,6 +5,8 @@
 //  Created by Joost van Grieken on 06/04/2023.
 //
 
+// MARK: Een extensie van de Movie bestand
+// Het decodeert de JSON bestand en stuurt het door naar de Movie bestand.
 import Foundation
 
 extension Movie {

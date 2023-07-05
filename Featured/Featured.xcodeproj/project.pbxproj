@@ -39,7 +39,6 @@
 		674DA1DB2A038536002B5AD4 /* search_movie.json in Resources */ = {isa = PBXBuildFile; fileRef = 674DA1D82A038536002B5AD4 /* search_movie.json */; };
 		678C1D5F29F55AEE003D8A02 /* RandomMovieStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 678C1D5E29F55AEE003D8A02 /* RandomMovieStore.swift */; };
 		679500062A1CE869002535D5 /* MovieFullListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 679500052A1CE869002535D5 /* MovieFullListView.swift */; };
-		67B4781C2A03F14C00022186 /* GenreId's.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67B4781B2A03F14C00022186 /* GenreId's.swift */; };
 		67CA176629F26FF500B9B97E /* AccountView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67CA176529F26FF500B9B97E /* AccountView.swift */; };
 		67EAC63829F194C800CC2E3E /* loginView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67EAC63729F194C800CC2E3E /* loginView.swift */; };
 		67FFD15329EE97A80037CE69 /* UserView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67FFD15229EE97A80037CE69 /* UserView.swift */; };
@@ -80,7 +79,6 @@
 		674DA1D82A038536002B5AD4 /* search_movie.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; name = search_movie.json; path = Resources/search_movie.json; sourceTree = SOURCE_ROOT; };
 		678C1D5E29F55AEE003D8A02 /* RandomMovieStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RandomMovieStore.swift; sourceTree = "<group>"; };
 		679500052A1CE869002535D5 /* MovieFullListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MovieFullListView.swift; sourceTree = "<group>"; };
-		67B4781B2A03F14C00022186 /* GenreId's.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "GenreId's.swift"; sourceTree = "<group>"; };
 		67CA176529F26FF500B9B97E /* AccountView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccountView.swift; sourceTree = "<group>"; };
 		67EAC63729F194C800CC2E3E /* loginView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = loginView.swift; path = ../../../API/loginView.swift; sourceTree = "<group>"; };
 		67FFD15229EE97A80037CE69 /* UserView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserView.swift; sourceTree = "<group>"; };
@@ -175,7 +173,6 @@
 			children = (
 				670B151229DEFA35003E23A9 /* MovieService.swift */,
 				670B151429DEFA4F003E23A9 /* MovieStore.swift */,
-				67B4781B2A03F14C00022186 /* GenreId's.swift */,
 				678C1D5E29F55AEE003D8A02 /* RandomMovieStore.swift */,
 			);
 			path = Services;
@@ -332,7 +329,6 @@
 				670B152829DEFB9F003E23A9 /* MovieListView.swift in Sources */,
 				670B151829DEFAA0003E23A9 /* ActivityIndicatView.swift in Sources */,
 				67433D952A20BF2800707171 /* UserData.swift in Sources */,
-				67B4781C2A03F14C00022186 /* GenreId's.swift in Sources */,
 				67EAC63829F194C800CC2E3E /* loginView.swift in Sources */,
 				670B152C29DEFBE4003E23A9 /* MoviePosterCarouselView.swift in Sources */,
 				670B151329DEFA35003E23A9 /* MovieService.swift in Sources */,

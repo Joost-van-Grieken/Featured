@@ -5,13 +5,15 @@
 //  Created by Joost van Grieken on 10/04/2023.
 //
 
+// MARK: Hantert de FilterView
+
 import SwiftUI
 
 struct FilterView: View {
     @Environment(\.presentationMode) var presentationMode
     @Binding var numOption: Int
-    @StateObject var selectedGenresViewModel = SelectedGenresViewModel()
-    @StateObject var selectedProviderViewModel = SelectedProviderViewModel()
+    @ObservedObject var selectedGenresViewModel = SelectedGenresViewModel()
+    @ObservedObject var selectedProviderViewModel = SelectedProviderViewModel()
     
     struct CustomColor {
         static let textColor = Color("textColor")
@@ -23,8 +25,8 @@ struct FilterView: View {
                 List {
                     Picker("Number of options", selection: $numOption) {
                         ForEach(1...10, id: \.self) { value in
-                            Text("\(value)").tag(value)
-                                .foregroundColor(CustomColor.textColor)
+                            Text("\(value)")
+                                .tag(value)
                         }
                     }
                     .pickerStyle(.menu)
@@ -41,7 +43,7 @@ struct FilterView: View {
                     }
                     
                     NavigationLink(destination: ProviderView(viewModel: ProviderViewModel())
-                                    .environmentObject(selectedProviderViewModel)) { // Pass the SelectedProviderViewModel as an environment object
+                                    .environmentObject(selectedProviderViewModel)) {
                         HStack {
                             Text("Providers")
                             if !selectedProviderViewModel.selectedProvider.isEmpty {
@@ -51,6 +53,7 @@ struct FilterView: View {
                         }
                     }
                 }
+                .foregroundColor(CustomColor.textColor)
                 
                 Spacer()
                 
@@ -77,6 +80,8 @@ struct FilterView_Previews: PreviewProvider {
     }
 }
 
+// MARK: Genre filter view
+
 class SelectedGenresViewModel: ObservableObject {
     @Published var selectedGenres: Set<Genre> = []
     
@@ -85,6 +90,8 @@ class SelectedGenresViewModel: ObservableObject {
     }
 }
 
+// MARK: provider filter view
+
 class SelectedProviderViewModel: ObservableObject {
     @Published var selectedProvider: Set<Provider> = []
     
@@ -92,6 +99,8 @@ class SelectedProviderViewModel: ObservableObject {
         return selectedProvider.map { $0.provider_name }.joined(separator: ", ")
     }
 }
+
+// MARK: Haal de informatie van de genre API call
 
 struct GenreView: View {
     @Environment(\.presentationMode) var presentationMode
@@ -148,6 +157,8 @@ struct GenreView: View {
         presentationMode.wrappedValue.dismiss()
     }
 }
+
+// MARK: Haalt de informatie van de provider API call
 
 struct ProviderView: View {
     @Environment(\.presentationMode) var presentationMode

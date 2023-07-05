@@ -5,12 +5,18 @@
 //  Created by Joost van Grieken on 06/04/2023.
 //
 
+// MARK: Hantert de detail pagina
+
 import SwiftUI
+
+class UserAuth: ObservableObject {
+    @Published var isLoggedIn = false
+}
 
 struct MovieDetailView: View {
     let movieId: Int
     @ObservedObject private var movieDetailState = MovieDetailState()
-    @State private var isLoggedIn = UserDefaults.standard.bool(forKey: UserDefaults.UserDefaultsKeys.isLoggedIn.rawValue) // Add the isLoggedIn property
+    @State private var isLoggedIn = UserDefaults.standard.bool(forKey: UserDefaults.UserDefaultsKeys.isLoggedIn.rawValue)
 
     var body: some View {
         ZStack {
@@ -28,7 +34,11 @@ struct MovieDetailView: View {
     }
 }
 
+// MARK: Hantert de stijl voor de Detail pagina
+
 struct MovieDetailListView: View {
+    
+    @EnvironmentObject var userAuth: UserAuth
     
     struct CustomColor {
         static let locked = Color("locked")
@@ -94,13 +104,6 @@ struct MovieDetailListView: View {
                         HStack {
                             if UserDefaults.standard.getLoggedIn() {
                                 VStack {
-//                                    if let selectedScore = selectedScore {
-//                                        Text("You rated")
-//                                        Text("\(selectedScore)/10")
-//                                    } else {
-//                                        Text("Add a score")
-//                                    }
-                                    
                                     Picker("Add a score", selection: $selectedScore) {
                                         Text("Add a score").tag(nil as Int?)
                                         
@@ -118,7 +121,6 @@ struct MovieDetailListView: View {
                                 }
                                 
                             } else {
-                                // Handle UI when user is not logged in
                                 Text("User not logged in")
                                     .foregroundColor(CustomColor.locked)
                                     .padding(10)
@@ -153,18 +155,17 @@ struct MovieDetailListView: View {
                         .frame(width: 30)
                     
                     Button(action: {
-                        // Watch button
-                        if UserDefaults.standard.getLoggedIn() {
+                        if userAuth.isLoggedIn {
                             if watchedOn {
-                                UserDefaults.standard.setWatchedMovieCount(value: false, forMovieId: movie.id)
+                                UserDefaults.standard.setWatchedMovieCount(value: false, id: movie.id)
                             } else {
-                                UserDefaults.standard.setWatchedMovieCount(value: true, forMovieId: movie.id)
+                                UserDefaults.standard.setWatchedMovieCount(value: true, id: movie.id)
                             }
                             watchedOn.toggle()
                         }
                     }) {
                         VStack(spacing: 3) {
-                            if !UserDefaults.standard.getLoggedIn() {
+                            if userAuth.isLoggedIn {
                                 Image("Watch (locked)")
                                 Text("watch").foregroundColor(CustomColor.locked)
                             } else if watchedOn {
@@ -176,15 +177,15 @@ struct MovieDetailListView: View {
                             }
                         }
                     }
+                    .disabled(!userAuth.isLoggedIn)
                     .onAppear {
-                        watchedOn = UserDefaults.standard.getWatchedState(forMovieId: movie.id)
+                        watchedOn = UserDefaults.standard.getWatchedState(id: movie.id)
                     }
-                    .disabled(!UserDefaults.standard.getLoggedIn())
+
                     
                     Spacer()
                     
-                    Button(action: {
-                        // Save button
+                    Button(action: { // Save button
                         if UserDefaults.standard.getLoggedIn() {
                             if savedOn {
                                 UserDefaults.standard.setSavedState(value: false, forMovieId: movie.id)
@@ -252,7 +253,6 @@ struct MovieDetailListView: View {
                 
                 VStack {
                     Text(movie.overview)
-//                        .font(.system(size: 14))
                 }
                 
                 Spacer()

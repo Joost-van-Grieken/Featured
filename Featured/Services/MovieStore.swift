@@ -5,6 +5,8 @@
 //  Created by Joost van Grieken on 06/04/2023.
 //
 
+// MARK: Hantert de meeste API calls
+
 import Foundation
 
 class MovieStore: MovieService {
@@ -27,14 +29,6 @@ class MovieStore: MovieService {
         self.loadURLAndDecode(url: url, completion: completion)
         print(url)
     }
-
-//    func fetchMovies(from endpoint: MovieListEndpoint, completion: @escaping (Result<MovieResponse, MovieError>) -> ()) {
-//        guard let url = URL(string: "\(baseAPIURL)/movie/\(endpoint.rawValue)") else {
-//            completion(.failure(.invalidEndpoint))
-//            return
-//        }
-//        self.loadURLAndDecode(url: url, completion: completion)
-//    }
     
     func fetchMovie(id: Int, completion: @escaping (Result<Movie, MovieError>) -> ()) {
         guard let url = URL(string: "\(baseAPIURL)/movie/\(id)&include_adult=false&watch_region=NL") else {

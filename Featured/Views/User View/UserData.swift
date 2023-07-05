@@ -5,6 +5,8 @@
 //  Created by Joost van Grieken on 26/05/2023.
 //
 
+// MARK: Hantert de data van de gebruiker
+
 import Foundation
 import Combine
 
@@ -46,12 +48,12 @@ extension UserDefaults: ObservableObject {
     
     //MARK: - Watched
     
-    func setWatchedState(value: Bool, forMovieId movieId: Int) {
-        set(value, forKey: "\(UserDefaultsKeys.watchedState.rawValue)_\(movieId)")
+    func setWatchedState(value: Bool, id: Int) {
+        set(value, forKey: "\(UserDefaultsKeys.watchedState.rawValue)_\(id)")
     }
     
-    func getWatchedState(forMovieId movieId: Int) -> Bool {
-        return bool(forKey: "\(UserDefaultsKeys.watchedState.rawValue)_\(movieId)")
+    func getWatchedState(id: Int) -> Bool {
+        return bool(forKey: "\(UserDefaultsKeys.watchedState.rawValue)_\(id)")
     }
     
     //MARK: - Duration
@@ -80,15 +82,12 @@ extension UserDefaults: ObservableObject {
         }
     }
     
-    func setWatchedMovieCount(value: Bool, forMovieId movieId: Int, durationText: String? = nil) {
-        let watchedStateKey = "\(UserDefaultsKeys.watchedState.rawValue)_\(movieId)"
+    func setWatchedMovieCount(value: Bool, id: Int, durationText: String? = nil) {
+        let watchedStateKey = "\(UserDefaultsKeys.watchedState.rawValue)_\(id)"
         let currentWatchedState = bool(forKey: watchedStateKey)
         
-        // Check if the watched state is changing
         if currentWatchedState != value {
             set(value, forKey: watchedStateKey)
-            
-            // Update the movie count based on the new watched state
             var count = watchedMovieCount
             
             if value {
@@ -104,8 +103,6 @@ extension UserDefaults: ObservableObject {
                     totalWatchedMinutes -= movieDuration
                 }
             }
-            
-            // Ensure the count is not lower than 0
             count = max(count, 0)
             
             watchedMovieCount = count
@@ -113,7 +110,6 @@ extension UserDefaults: ObservableObject {
     }
     
     private func extractDurationInMinutes(from durationText: String) -> Int {
-        // Assuming the duration text is in the format "X min"
         let components = durationText.components(separatedBy: " ")
         if let minutesString = components.first, let minutes = Int(minutesString) {
             return minutes

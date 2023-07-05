@@ -5,15 +5,17 @@
 //  Created by Joost van Grieken on 06/04/2023.
 //
 
+// MARK: Hantert de homepagina
+
 import SwiftUI
 
 struct ContentView: View {
-    
     @State var selection = 0
+    @StateObject private var userAuth = UserAuth() // Create UserAuth object as a state object
     
     var body: some View {
-        TabView (selection: $selection) {
-            MovieListView(username: "", isLoggedIn: false)
+        TabView(selection: $selection) {
+            MovieListView(username: "", isLoggedIn: userAuth.isLoggedIn) // Pass isLoggedIn state from UserAuth
                 .tabItem {
                     VStack {
                         if selection == 0 {
@@ -26,7 +28,7 @@ struct ContentView: View {
                 }
                 .tag(0)
             
-            RandomiserView()
+            RandomiserView(totalPages: RandomMovieStore.shared)
                 .tabItem {
                     VStack {
                         if selection == 1 {
@@ -41,6 +43,7 @@ struct ContentView: View {
                 .tag(1)
             
             UserView()
+                .environmentObject(userAuth) // Inject UserAuth as an environment object
                 .tabItem {
                     VStack {
                         if selection == 2 {
@@ -53,6 +56,7 @@ struct ContentView: View {
                 }
                 .tag(2)
         }
+        .environmentObject(userAuth) // Inject UserAuth as an environment object
     }
 }
 

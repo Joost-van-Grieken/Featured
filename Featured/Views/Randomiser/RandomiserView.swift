@@ -5,6 +5,8 @@
 //  Created by Joost van Grieken on 10/04/2023.
 //
 
+// MARK: Hantert de RandomiserView
+
 import SwiftUI
 import Combine
 
@@ -21,11 +23,12 @@ struct RandomiserView: View {
     @State private var filteredMovies: [Movie] = []
     @State private var movieTitles: [String] = []
     @State private var fetchedMovies = [Movie]()
-    @State var randomNumber = [Int]()
     
     @State private var numOption: Int = 3
     @StateObject var selectedGenresViewModel = SelectedGenresViewModel()
     @StateObject var selectedProviderViewModel = SelectedProviderViewModel()
+    
+    var totalPages: RandomMovieStore
     
     var body: some View {
         NavigationView {
@@ -106,10 +109,15 @@ struct RandomiserView: View {
                 
                 Button(action: {
                     Task {
-                        await performTask(numOption: numOption, selectedGenresViewModel: selectedGenresViewModel, selectedProviderViewModel: selectedProviderViewModel) { movieIDs in
+                        performTask(
+                                    numOption: numOption,
+                                    selectedGenresViewModel: selectedGenresViewModel,
+                                    selectedProviderViewModel: selectedProviderViewModel
+                        ) { movieIDs,arg  in
                             var fetchedMovies = [Movie]()
                             let dispatchGroup = DispatchGroup()
                             
+                            // plaatst de id van de films om de infromatie eruit te halen
                             for id in movieIDs {
                                 dispatchGroup.enter()
                                 print("Fetching movie with ID: \(id)")
@@ -150,27 +158,50 @@ struct RandomiserView: View {
 
 struct RandomiserView_Previews: PreviewProvider {
     static var previews: some View {
-        RandomiserView()
+        RandomiserView(totalPages: RandomMovieStore.shared)
     }
 }
 
-// Step 1: Get random page numbers
-func getRandomPageNumbers(count: Int) -> [Int] {
-    let randomNumbers = Array(1...50).shuffled().prefix(count)
+// MARK: Hantert de randomiser
+// Stap 1: Roept eerst de aantal pagina's op
+func performTask(numOption: Int, selectedGenresViewModel: SelectedGenresViewModel, selectedProviderViewModel: SelectedProviderViewModel, completion: @escaping ([Int], Int?) -> Void) {
+    let genreIDs = selectedGenresViewModel.selectedGenres.map { $0.id }
+    let providerIDs = selectedProviderViewModel.selectedProvider.map { $0.provider_id }
+    
+    RandomMovieStore.shared.fetchTotalPages(genres: genreIDs, providers: providerIDs) { result in
+        switch result {
+        case .success(let totalPages):
+            let pageNumbers = getRandomPageNumbers(numOption: numOption, totalPages: totalPages)
+            applyFiltersAndFindMovieIDs(pages: pageNumbers, genres: genreIDs, providers: providerIDs) { ids in
+                completion(ids, totalPages)
+            }
+        case .failure(let error):
+            print("Failed to fetch total pages: \(error)")
+            completion([], nil)
+        }
+    }
+}
+
+
+// Stap 2: kiest een random pagina nummer
+func getRandomPageNumbers(numOption: Int, totalPages: Int) -> [Int] {
+    let randomNumbers = Array(1...totalPages).shuffled().prefix(numOption)
+    print("number of options: \(numOption)")
+    print(randomNumbers)
     return Array(randomNumbers)
 }
 
-// Step 2: Link to a function that applies the numbers to the selected genres
+// Stap 3: Voegt filters toe aan de API call (mocht die er zijn), voegt de pagina in de api call. Bij succes kiest die 1 random film van de resultaten en pakt de film id.
 func applyFiltersAndFindMovieIDs(pages: [Int], genres: [Int], providers: [Int], completion: @escaping ([Int]) -> Void) {
     var movieIDs = [Int]()
     let group = DispatchGroup()
-    
+
     for page in pages {
         group.enter()
-        
+
         let genreIDs = genres.map(String.init).joined(separator: ",")
         let providerIDs = providers.map(String.init).joined(separator: ",")
-        
+
         RandomMovieStore.shared.discoverMovies(page: page, genres: genreIDs, providers: providerIDs) { result in
             switch result {
             case .success(let response):
@@ -185,34 +216,10 @@ func applyFiltersAndFindMovieIDs(pages: [Int], genres: [Int], providers: [Int], 
             group.leave()
         }
     }
-    
+
     group.notify(queue: .main) {
         print("All API calls completed")
         completion(movieIDs)
     }
 }
 
-// Step 3: Perform task
-func performTask(numOption: Int, selectedGenresViewModel: SelectedGenresViewModel, selectedProviderViewModel: SelectedProviderViewModel, completion: @escaping ([Int]) -> Void) {
-    let pageNumbers = getRandomPageNumbers(count: numOption)
-    print("number of options", numOption)
-    print("Generated random page numbers:", pageNumbers)
-    
-    let genreIDs = selectedGenresViewModel.selectedGenres.map { $0.id }
-    let providerIDs = selectedProviderViewModel.selectedProvider.map { $0.provider_id }
-    
-    applyFiltersAndFindMovieIDs(pages: pageNumbers, genres: genreIDs, providers: providerIDs) { ids in
-        print("Task completed")
-        completion(ids)
-    }
-}
-
-// Main function
-func main() {
-    let selectedGenresViewModel = SelectedGenresViewModel()
-    let selectedProviderViewModel = SelectedProviderViewModel()
-    
-    performTask(numOption: 3, selectedGenresViewModel: selectedGenresViewModel, selectedProviderViewModel: selectedProviderViewModel) { movieIDs in
-        // Handle the movieIDs result here
-    }
-}

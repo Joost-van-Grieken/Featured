@@ -5,6 +5,8 @@
 //  Created by Joost van Grieken on 06/04/2023.
 //
 
+// MARK: Hantert de backdrop afbeelding
+
 import SwiftUI
 
 struct MovieBackdropCard: View {

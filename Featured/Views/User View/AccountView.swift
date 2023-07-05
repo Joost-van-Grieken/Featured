@@ -5,6 +5,8 @@
 //  Created by Joost van Grieken on 21/04/2023.
 //
 
+// MARK: Hantert de accountView
+
 import SwiftUI
 
 struct AccountView: View {
@@ -101,7 +103,7 @@ struct AccountView: View {
                         }
                     }
                     .onAppear {
-                        let watchedState = UserDefaults.standard.getWatchedState(forMovieId: movie.id)
+                        let watchedState = UserDefaults.standard.getWatchedState(id: movie.id)
                         if watchedState {
                             // Fetch the movie using its ID and add it to the watchedMovies array
                             if let watchedMovie = movieListState.movies.first(where: { $0.id == movie.id }) {
@@ -121,6 +123,6 @@ struct AccountView: View {
 
 struct AccountView_Previews: PreviewProvider {
     static var previews: some View {
-        AccountView(username: "", movie: Movie.stubbedMovie)
+        AccountView(username: "joost2023", movie: Movie.stubbedMovie)
     }
 }
