@@ -100,7 +100,6 @@
 			children = (
 				670B150729DEF9CE003E23A9 /* Models */,
 				670B150229DEF978003E23A9 /* Bindings */,
-				670B151129DEF9F5003E23A9 /* Resources */,
 				670B151629DEFA59003E23A9 /* Services */,
 				670B152229DEFB3D003E23A9 /* Views */,
 				670B14E929DEF891003E23A9 /* Featured */,
@@ -159,13 +158,6 @@
 				670B150529DEF9BF003E23A9 /* Movie.swift */,
 			);
 			path = Models;
-			sourceTree = "<group>";
-		};
-		670B151129DEF9F5003E23A9 /* Resources */ = {
-			isa = PBXGroup;
-			children = (
-			);
-			path = Resources;
 			sourceTree = "<group>";
 		};
 		670B151629DEFA59003E23A9 /* Services */ = {

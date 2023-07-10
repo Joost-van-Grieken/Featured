@@ -14,31 +14,50 @@ class RandomMovieStore: ObservableObject {
     @Published var randomMovie: Movie?
     @Published var genres = [Genre]()
     @Published var selectedGenres = Set<Int>()
-    @Published var totalPages = Int()
+    @Published var totalPages: Int = 1
     
     static let shared = RandomMovieStore()
+    
     private let apiKey = "ae1c9875a55b3f3d23c889e07b973920"
     let urlSession = URLSession.shared
     let jsonDecoder = Utils.jsonDecoder
     
-    func fetchTotalPages(genres: [Int], providers: [Int], completion: @escaping (Result<Int, MovieError>) -> ()) {
-        let genreIDs = genres.map(String.init).joined(separator: ",")
-        let providerIDs = providers.map(String.init).joined(separator: ",")
-
-        guard let url = URL(string: "https://api.themoviedb.org/3/discover/movie?api_key=\(apiKey)&include_adult=false&page=1&with_genres=\(genreIDs)&watch_region=NL&vote_average.ite=1&with_watch_providers=\(providerIDs)") else {
+    func fetchTotalPages(genres: [Int], providers: [Int], completion: @escaping (Result<Int, MovieError>) -> Void) {
+        let genresString = genres.map { String($0) }.joined(separator: ",")
+        let providersString = providers.map { String($0) }.joined(separator: ",")
+        
+        guard let encodedGenres = genresString.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed),
+              let encodedProviders = providersString.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) else {
             completion(.failure(.invalidEndpoint))
             return
         }
-
-        loadURLAndDecode(url: url) { (result: Result<MovieResponsePages, MovieError>) in
-            switch result {
-            case .success(let pagesResponse):
-                completion(.success(pagesResponse.totalPages))
-            case .failure(let error):
-                completion(.failure(error))
-            }
+        
+        let urlString = "https://api.themoviedb.org/3/discover/movie?api_key=\(apiKey)&include_adult=false&page=1&with_genres=\(encodedGenres)&watch_region=NL&vote_average.ite=1&with_watch_providers=\(encodedProviders)"
+        
+        guard let url = URL(string: urlString) else {
+            completion(.failure(.invalidEndpoint))
+            return
         }
-        print(totalPages)
+        
+        URLSession.shared.dataTask(with: url) { data, response, error in
+            if let data = data {
+                do {
+                    let apiResponse = try JSONDecoder().decode(APIResponse.self, from: data)
+                    DispatchQueue.main.async {
+                        self.totalPages = apiResponse.totalPages
+                        completion(.success(apiResponse.totalPages))
+                        print("total pages are: \(apiResponse.totalPages)")
+                    }
+                } catch {
+                    print("Error decoding API response: \(error)")
+                    completion(.failure(.serializationError))
+                }
+            } else if let error = error {
+                print("Error fetching movies: \(error)")
+                completion(.failure(.invalidResponse))
+            }
+        }.resume()
+        print(urlString)
     }
 
     func discoverMovies(page: Int, genres: String, providers: String, completion: @escaping (Result<MovieResponse, MovieError>) -> ()) {
@@ -101,7 +120,7 @@ class RandomMovieStore: ObservableObject {
     }
 }
 
-struct MovieResponsePages: Codable {
+struct APIResponse: Codable {
     let totalPages: Int
     
     enum CodingKeys: String, CodingKey {
@@ -109,53 +128,6 @@ struct MovieResponsePages: Codable {
     }
 }
 
-//class MovieData: ObservableObject {
-//    @Published var randomMovie: Movie?
-//    @Published var genres = [Genre]()
-//    @Published var selectedGenres = Set<Int>()
-//    @Published var totalPages: Int = 0
-//
-//    private let apiKey = "ae1c9875a55b3f3d23c889e07b973920"
-//
-//    func fetchMovieData(page: Int, genres: String, providers: String, completion: @escaping (Result<MovieResponse, MovieError>) -> ()) {
-//        let urlString = "https://api.themoviedb.org/3/discover/movie?api_key=\(apiKey)&include_adult=false&page=\(page)&with_genres=\(genres)&watch_region=NL&vote_average.ite=1&with_watch_providers=\(providers)") else {
-//            completion(.failure(.invalidEndpoint))
-//            return
-//        }
-//
-//        guard let url = URL(string: urlString) else {
-//            print("Invalid URL")
-//            return
-//        }
-//
-//        URLSession.shared.dataTask(with: url) { data, response, error in
-//            if let error = error {
-//                print("Error: \(error.localizedDescription)")
-//                return
-//            }
-//
-//            guard let httpResponse = response as? HTTPURLResponse,
-//                  httpResponse.statusCode == 200,
-//                  let data = data else {
-//                print("Invalid response")
-//                return
-//            }
-//
-//            do {
-//                let decoder = JSONDecoder()
-//                let movieResponse = try decoder.decode(MovieResponse.self, from: data)
-//
-//                let movieResponsePages = try decoder.decode(MovieResponsePages.self, from: data)
-//
-//                DispatchQueue.main.async {
-//                    self.totalPages = movieResponsePages.totalPages
-//                }
-//            } catch {
-//                print("Error decoding JSON: \(error.localizedDescription)")
-//            }
-//        }.resume()
-//    }
-//}
 
 // MARK: Hantert de filter api calls voor de filterView
 
@@ -198,6 +170,10 @@ struct Provider: Codable, Hashable {
     let provider_id: Int
     let provider_name: String
     let logo_path: String?
+    
+    var logoPathURL: URL {
+        return URL(string: "https://image.tmdb.org/t/p/w500\(self.logo_path ?? "")")!
+    }
 }
 
 class ProviderViewModel: ObservableObject {
