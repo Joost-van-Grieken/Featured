@@ -10,6 +10,8 @@
 import SwiftUI
 
 struct MovieFullListView: View {
+    
+    @EnvironmentObject var settings: UserSettings
     @ObservedObject private var movieListState: MovieListState
     
     let title: String
@@ -52,14 +54,14 @@ struct MovieFullListView: View {
                                 Spacer()
                                 
                                 Button(action: { // Watch button
-                                    if !UserDefaults.standard.getLoggedIn() {
+                                    if !UserDefaults.standard.bool(forKey: "login") {
                                     } else {
                                         let watchedOn = UserDefaults.standard.getWatchedState(id: movie.id)
                                         UserDefaults.standard.setWatchedState(value: !watchedOn, id: movie.id)
                                     }
                                 }) {
                                     VStack {
-                                        if !UserDefaults.standard.getLoggedIn() {
+                                        if !UserDefaults.standard.bool(forKey: "login") {
                                             Image("Watch (locked)")
                                                 .resizable()
                                                 .frame(width: 25, height: 25)
@@ -74,19 +76,19 @@ struct MovieFullListView: View {
                                         }
                                     }
                                 }
-                                .disabled(!UserDefaults.standard.getLoggedIn())
+                                .disabled(!UserDefaults.standard.bool(forKey: "login"))
                                 
                                 Spacer()
                                 
                                 Button(action: { // Save button
-                                    if !UserDefaults.standard.getLoggedIn() {
+                                    if !UserDefaults.standard.bool(forKey: "login") {
                                     } else {
                                         let savedOn = UserDefaults.standard.getSavedState(forMovieId: movie.id)
                                         UserDefaults.standard.setSavedState(value: !savedOn, forMovieId: movie.id)
                                     }
                                 }) {
                                     VStack {
-                                        if !UserDefaults.standard.getLoggedIn() {
+                                        if !UserDefaults.standard.bool(forKey: "login") {
                                             Image("Save (locked)")
                                                 .resizable()
                                                 .frame(width: 25, height: 25)
@@ -104,7 +106,7 @@ struct MovieFullListView: View {
                                 .onAppear {
                                     savedOn = UserDefaults.standard.getSavedState(forMovieId: movie.id)
                                 }
-                                .disabled(!UserDefaults.standard.getLoggedIn())
+                                .disabled(!UserDefaults.standard.bool(forKey: "login"))
                                 
                                 Spacer()
                             }

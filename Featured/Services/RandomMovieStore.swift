@@ -22,17 +22,17 @@ class RandomMovieStore: ObservableObject {
     let urlSession = URLSession.shared
     let jsonDecoder = Utils.jsonDecoder
     
-    func fetchTotalPages(genres: [Int], providers: [Int], completion: @escaping (Result<Int, MovieError>) -> Void) {
+    func fetchTotalPages(from endpoint: MovieListEndpoint,genres: [Int], providers: [Int], completion: @escaping (Result<Int, MovieError>) -> Void) {
         let genresString = genres.map { String($0) }.joined(separator: ",")
         let providersString = providers.map { String($0) }.joined(separator: ",")
         
-        guard let encodedGenres = genresString.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed),
-              let encodedProviders = providersString.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) else {
+        guard let _ = genresString.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed),
+              let _ = providersString.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) else {
             completion(.failure(.invalidEndpoint))
             return
         }
         
-        let urlString = "https://api.themoviedb.org/3/discover/movie?api_key=\(apiKey)&include_adult=false&page=1&with_genres=\(encodedGenres)&watch_region=NL&vote_average.ite=1&with_watch_providers=\(encodedProviders)"
+        let urlString = "https://api.themoviedb.org/3/movie/\(endpoint.rawValue)?api_key=\(apiKey)&include_adult=false&page=1&with_genres=\(genresString)&watch_region=NL&vote_average.ite=1&with_watch_providers=\(providersString)"
         
         guard let url = URL(string: urlString) else {
             completion(.failure(.invalidEndpoint))
@@ -60,8 +60,8 @@ class RandomMovieStore: ObservableObject {
         print(urlString)
     }
 
-    func discoverMovies(page: Int, genres: String, providers: String, completion: @escaping (Result<MovieResponse, MovieError>) -> ()) {
-        guard let url = URL(string: "https://api.themoviedb.org/3/discover/movie?api_key=\(apiKey)&include_adult=false&page=\(page)&with_genres=\(genres)&watch_region=NL&vote_average.ite=1&with_watch_providers=\(providers)") else {
+    func discoverMovies(from endpoint: MovieListEndpoint, page: Int, genres: String, providers: String, completion: @escaping (Result<RandomMovieResponse, MovieError>) -> ()) {
+        guard let url = URL(string: "https://api.themoviedb.org/3/movie/\(endpoint.rawValue)?api_key=\(apiKey)&include_adult=false&page=\(page)&with_genres=\(genres)&watch_region=NL&vote_average.ite=1&with_watch_providers=\(providers)") else {
             completion(.failure(.invalidEndpoint))
             return
         }
@@ -118,6 +118,11 @@ class RandomMovieStore: ObservableObject {
             completion(result)
         }
     }
+}
+
+struct RandomMovieResponse: Decodable {
+    let page: Int
+    let results: [Movie]
 }
 
 struct APIResponse: Codable {

@@ -23,6 +23,7 @@ struct RandomiserView: View {
     @State private var filteredMovies: [Movie] = []
     @State private var movieTitles: [String] = []
     @State private var fetchedMovies = [Movie]()
+    @State private var selectedEndpoint: MovieListEndpoint = .popular
     
     @State private var numOption: Int = 3
     @StateObject var selectedGenresViewModel = SelectedGenresViewModel()
@@ -46,8 +47,9 @@ struct RandomiserView: View {
                         .background(Color.accentColor)
                         .cornerRadius(10)
                         .sheet(isPresented: $isShowingFilters) {
-                            FilterView(numOption: $numOption, selectedGenresViewModel: selectedGenresViewModel, selectedProviderViewModel: selectedProviderViewModel)
+                            FilterView(numOption: $numOption, selectedEndpoint: $selectedEndpoint, selectedGenresViewModel: selectedGenresViewModel, selectedProviderViewModel: selectedProviderViewModel)
                         }
+
                 }
                 
                 Spacer()
@@ -110,7 +112,7 @@ struct RandomiserView: View {
                 Button(action: {
                     Task {
                         performTask(
-                            numOption: numOption,
+                            numOption: numOption, selectedEndpoint: selectedEndpoint,
                             selectedGenresViewModel: selectedGenresViewModel,
                             selectedProviderViewModel: selectedProviderViewModel
                         ) { movieIDs,arg  in
@@ -164,15 +166,15 @@ struct RandomiserView_Previews: PreviewProvider {
 
 // MARK: Hantert de randomiser
 // Voert de actie in stappen uit. Stap 1: Roept eerst de totaal aantal pagina's op. Bij succes gaat die over naar stap 2: random nummer genereren tussen 1 en de totaal pagina's. Stap 3: Voert die random nummer samen met de filters (mocht die er zijn) in de uiteindelijke api call.
-func performTask(numOption: Int, selectedGenresViewModel: SelectedGenresViewModel, selectedProviderViewModel: SelectedProviderViewModel, completion: @escaping ([Int], Int?) -> Void) {
+func performTask(numOption: Int, selectedEndpoint: MovieListEndpoint, selectedGenresViewModel: SelectedGenresViewModel, selectedProviderViewModel: SelectedProviderViewModel, completion: @escaping ([Int], Int?) -> Void) {
     let genreIDs = selectedGenresViewModel.selectedGenres.map { $0.id }
     let providerIDs = Array(selectedProviderViewModel.selectedProvider.map { $0.provider_id }.shuffled().prefix(1))
     
-    RandomMovieStore.shared.fetchTotalPages(genres: genreIDs, providers: providerIDs) { result in
+    RandomMovieStore.shared.fetchTotalPages(from: selectedEndpoint, genres: genreIDs, providers: providerIDs) { result in
         switch result {
         case .success(let totalPages):
             let pageNumbers = getRandomPageNumbers(numOption: numOption, totalPages: totalPages)
-            applyFiltersAndFindMovieIDs(pages: pageNumbers, genres: genreIDs, providers: providerIDs) { ids in
+            applyFiltersAndFindMovieIDs(selectedEndpoint: selectedEndpoint, pages: pageNumbers, genres: genreIDs, providers: providerIDs) { ids in
                 completion(ids, totalPages)
             }
         case .failure(let error):
@@ -191,7 +193,7 @@ func performTask(numOption: Int, selectedGenresViewModel: SelectedGenresViewMode
     }
     
     // Voegt filters toe aan de API call (mocht die er zijn), voegt de pagina in de api call. Bij succes kiest die 1 random film van de resultaten en pakt de film id.
-    func applyFiltersAndFindMovieIDs(pages: [Int], genres: [Int], providers: [Int], completion: @escaping ([Int]) -> Void) {
+    func applyFiltersAndFindMovieIDs(selectedEndpoint: MovieListEndpoint, pages: [Int], genres: [Int], providers: [Int], completion: @escaping ([Int]) -> Void) {
         var movieIDs = [Int]()
         let group = DispatchGroup()
 
@@ -199,14 +201,14 @@ func performTask(numOption: Int, selectedGenresViewModel: SelectedGenresViewMode
             group.enter()
 
             let genreIDs = genres.map(String.init).joined(separator: ",")
-            let providerIDs = Array(providers.shuffled().prefix(1))
+            let providerIDs = Array(providers.shuffled().prefix(1)) // Limiet van 1 provider id per api call.
 
-            RandomMovieStore.shared.discoverMovies(page: page, genres: genreIDs, providers: providerIDs.map(String.init).joined()) { result in
+            RandomMovieStore.shared.discoverMovies(from: selectedEndpoint, page: page, genres: genreIDs, providers: providerIDs.map(String.init).joined()) { result in
                 switch result {
                 case .success(let response):
                     print("this is page", page)
-                    if !response.results.isEmpty { // Komt leeg terug!!
-                        print("is the results empty?", !response.results.isEmpty)
+                    if !response.results.isEmpty {
+//                        print("API response:", response)
                         let randomIndex = Int.random(in: 1..<response.results.count)
                         print("this is randomIndex", randomIndex)
                         let randomMovie = response.results[randomIndex]

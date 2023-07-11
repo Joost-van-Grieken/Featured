@@ -12,6 +12,7 @@ import SwiftUI
 struct FilterView: View {
     @Environment(\.presentationMode) var presentationMode
     @Binding var numOption: Int
+    @Binding var selectedEndpoint: MovieListEndpoint 
     @ObservedObject var selectedGenresViewModel = SelectedGenresViewModel()
     @ObservedObject var selectedProviderViewModel = SelectedProviderViewModel()
     
@@ -27,6 +28,14 @@ struct FilterView: View {
                         ForEach(1...10, id: \.self) { value in
                             Text("\(value)")
                                 .tag(value)
+                        }
+                    }
+                    .pickerStyle(.menu)
+                    
+                    Picker("Movie list", selection: $selectedEndpoint) {
+                        ForEach(MovieListEndpoint.allCases) { endpoint in
+                            Text(endpoint.description)
+                                .tag(endpoint)
                         }
                     }
                     .pickerStyle(.menu)
@@ -76,7 +85,7 @@ struct FilterView: View {
 
 struct FilterView_Previews: PreviewProvider {
     static var previews: some View {
-        FilterView(numOption: .constant(3))
+        FilterView(numOption: .constant(3), selectedEndpoint: .constant(.popular))
     }
 }
 

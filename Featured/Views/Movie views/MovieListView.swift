@@ -11,6 +11,8 @@ import SwiftUI
 
 struct MovieListView: View {
     
+    @EnvironmentObject var settings: UserSettings
+    
     @ObservedObject private var nowPlayingState = MovieListState()
     @ObservedObject private var upcomingState = MovieListState()
     @ObservedObject private var topRatedState = MovieListState()
@@ -123,7 +125,6 @@ struct MovieListView: View {
             .navigationTitle(getWelcomeMessage())
         }
         .onAppear {
-            self.nowPlayingState.loadMovies(from: .nowPlaying, page: 1)
             self.upcomingState.loadMovies(from: .upcoming, page: 1)
             self.topRatedState.loadMovies(from: .topRated, page: 1)
             self.popularState.loadMovies(from: .popular, page: 1)
@@ -134,14 +135,14 @@ struct MovieListView: View {
         if isLoggedIn == false {
             return "Welcome, stranger"
         } else {
-            return "Welcome, joost2023"
+            return "Welcome, user123"
         }
     }
 }
 
 struct MovieListView_Previews: PreviewProvider {
     static var previews: some View {
-        MovieListView(username: "joost2023", isLoggedIn: false)
+        MovieListView(username: "user123", isLoggedIn: false)
     }
 }
 

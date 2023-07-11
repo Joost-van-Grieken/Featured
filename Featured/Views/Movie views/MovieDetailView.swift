@@ -39,6 +39,7 @@ struct MovieDetailView: View {
 struct MovieDetailListView: View {
     
     @EnvironmentObject var userAuth: UserAuth
+    @EnvironmentObject var settings: UserSettings
     
     struct CustomColor {
         static let locked = Color("locked")
@@ -102,7 +103,7 @@ struct MovieDetailListView: View {
                         Spacer()
                         
                         HStack {
-                            if UserDefaults.standard.getLoggedIn() {
+                            if UserDefaults.standard.bool(forKey: "login") {
                                 VStack {
                                     Picker("Add a score", selection: $selectedScore) {
                                         Text("Add a score").tag(nil as Int?)
@@ -186,7 +187,7 @@ struct MovieDetailListView: View {
                     Spacer()
                     
                     Button(action: { // Save button
-                        if UserDefaults.standard.getLoggedIn() {
+                        if UserDefaults.standard.bool(forKey: "login") {
                             if savedOn {
                                 UserDefaults.standard.setSavedState(value: false, forMovieId: movie.id)
                             } else {
@@ -196,7 +197,7 @@ struct MovieDetailListView: View {
                         }
                     }) {
                         VStack(spacing: 3) {
-                            if !UserDefaults.standard.getLoggedIn() {
+                            if !UserDefaults.standard.bool(forKey: "login") {
                                 Image("Save (locked)")
                                 Text("Save").foregroundColor(CustomColor.locked)
                             } else if savedOn {
@@ -211,7 +212,7 @@ struct MovieDetailListView: View {
                     .onAppear {
                         savedOn = UserDefaults.standard.getSavedState(forMovieId: movie.id)
                     }
-                    .disabled(!UserDefaults.standard.getLoggedIn())
+                    .disabled(!UserDefaults.standard.bool(forKey: "login"))
 
                     Spacer()
                     

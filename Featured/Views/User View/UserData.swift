@@ -16,7 +16,6 @@ extension UserDefaults: ObservableObject {
         var id: String { rawValue }
         
         case isLoggedIn
-        case userID
         case watchedState
         case watchedCount
         case totalWatchedMinutes
@@ -26,25 +25,13 @@ extension UserDefaults: ObservableObject {
     
     //MARK: - Check Login
     
-    func setLoggedIn(value: Bool) {
-        set(value, forKey: UserDefaultsKeys.isLoggedIn.rawValue)
-    }
-    
-    func getLoggedIn() -> Bool {
-        return bool(forKey: UserDefaultsKeys.isLoggedIn.rawValue)
-    }
-    
-    //MARK: - Save User Data
-    
-    func setUserID(value: Int) {
-        set(value, forKey: UserDefaultsKeys.userID.rawValue)
-    }
-    
-    //MARK: - Retrieve User Data
-    
-    func getUserID() -> Int {
-        return integer(forKey: UserDefaultsKeys.userID.rawValue)
-    }
+//    func setLoggedIn(value: Bool) {
+//        set(value, forKey: UserDefaultsKeys.isLoggedIn.rawValue)
+//    }
+//    
+//    func getLoggedIn() -> Bool {
+//        return bool(forKey: UserDefaultsKeys.isLoggedIn.rawValue)
+//    }
     
     //MARK: - Watched
     
