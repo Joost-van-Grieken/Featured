@@ -15,7 +15,7 @@ struct ContentView: View {
     
     var body: some View {
         TabView(selection: $selection) {
-            MovieListView(username: "") // Pass isLoggedIn state from UserAuth
+            MovieListView()
                 .tabItem {
                     VStack {
                         if selection == 0 {

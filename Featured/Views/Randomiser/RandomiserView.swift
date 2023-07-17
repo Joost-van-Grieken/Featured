@@ -20,9 +20,9 @@ struct RandomiserView: View {
     @StateObject private var imageLoader = ImageLoader()
     
     @State private var isShowingFilters = false
-    @State private var filteredMovies: [Movie] = []
-    @State private var movieTitles: [String] = []
-    @State private var fetchedMovies = [Movie]()
+    @State private var filteredMovies = [Movie]()
+//    @State private var movieTitles: [String] = []
+//    @State private var fetchedMovies = [Movie]()
     @State private var selectedEndpoint: MovieListEndpoint = .popular
     
     @State private var numOption: Int = 3
@@ -136,8 +136,8 @@ struct RandomiserView: View {
                             
                             dispatchGroup.notify(queue: .main) {
                                 self.filteredMovies = fetchedMovies
-                                self.movieTitles = fetchedMovies.map({ $0.title })
-                                print(self.movieTitles)
+//                                self.movieTitles = fetchedMovies.map({ $0.title })
+//                                print(self.movieTitles)
                             }
                         }
                     }
@@ -208,7 +208,7 @@ func performTask(numOption: Int, selectedEndpoint: MovieListEndpoint, selectedGe
                 case .success(let response):
                     print("this is page", page)
                     if !response.results.isEmpty {
-//                        print("API response:", response)
+                        print("API response:", response)
                         let randomIndex = Int.random(in: 1..<response.results.count)
                         print("this is randomIndex", randomIndex)
                         let randomMovie = response.results[randomIndex]

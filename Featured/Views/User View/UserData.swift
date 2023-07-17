@@ -15,7 +15,6 @@ extension UserDefaults: ObservableObject {
     enum UserDefaultsKeys: String, CaseIterable, Identifiable {
         var id: String { rawValue }
         
-        case isLoggedIn
         case watchedState
         case watchedCount
         case totalWatchedMinutes
@@ -23,24 +22,14 @@ extension UserDefaults: ObservableObject {
         case rated
     }
     
-    //MARK: - Check Login
-    
-//    func setLoggedIn(value: Bool) {
-//        set(value, forKey: UserDefaultsKeys.isLoggedIn.rawValue)
-//    }
-//    
-//    func getLoggedIn() -> Bool {
-//        return bool(forKey: UserDefaultsKeys.isLoggedIn.rawValue)
-//    }
-    
     //MARK: - Watched
     
-    func setWatchedState(value: Bool, id: Int) {
-        set(value, forKey: "\(UserDefaultsKeys.watchedState.rawValue)_\(id)")
+    func setWatchedState(value: Bool, movieId: Int) {
+        set(value, forKey: "\(UserDefaultsKeys.watchedState.rawValue)_\(movieId)")
     }
     
-    func getWatchedState(id: Int) -> Bool {
-        return bool(forKey: "\(UserDefaultsKeys.watchedState.rawValue)_\(id)")
+    func getWatchedState(movieId: Int) -> Bool {
+        return bool(forKey: "\(UserDefaultsKeys.watchedState.rawValue)_\(movieId)")
     }
     
     //MARK: - Duration
@@ -69,18 +58,18 @@ extension UserDefaults: ObservableObject {
         }
     }
     
-    func setWatchedMovieCount(value: Bool, id: Int, durationText: String? = nil) {
-        let watchedStateKey = "\(UserDefaultsKeys.watchedState.rawValue)_\(id)"
+    func setWatchedMovieCount(value: Bool, movieId: Int, durationText: String?) {
+        let watchedStateKey = "\(UserDefaultsKeys.watchedState.rawValue)_\(movieId)"
         let currentWatchedState = bool(forKey: watchedStateKey)
-        
+
         if currentWatchedState != value {
             set(value, forKey: watchedStateKey)
             var count = watchedMovieCount
-            
+
             if value {
                 count += 1
-                if let durationText = durationText {
-                    let movieDuration = extractDurationInMinutes(from: durationText)
+                if durationText != nil {
+                    let movieDuration = extractDurationInMinutes(from: durationText!)
                     totalWatchedMinutes += movieDuration
                 }
             } else {
@@ -91,7 +80,7 @@ extension UserDefaults: ObservableObject {
                 }
             }
             count = max(count, 0)
-            
+
             watchedMovieCount = count
         }
     }
@@ -110,11 +99,11 @@ extension UserDefaults: ObservableObject {
     
     //MARK: - Saved
     
-    func setSavedState(value: Bool, forMovieId movieId: Int) {
+    func setSavedState(value: Bool, movieId: Int) {
         set(value, forKey: "\(UserDefaultsKeys.savedState.rawValue)_\(movieId)")
     }
     
-    func getSavedState(forMovieId movieId: Int) -> Bool {
+    func getSavedState(movieId: Int) -> Bool {
         return bool(forKey: "\(UserDefaultsKeys.savedState.rawValue)_\(movieId)")
     }
     
@@ -128,3 +117,78 @@ extension UserDefaults: ObservableObject {
         return double(forKey: UserDefaultsKeys.rated.rawValue)
     }
 }
+
+//MARK: - Hanteert de login status.
+
+class UserSettings: ObservableObject {
+    @Published var isLoggedIn: Bool {
+        didSet {
+            UserDefaults.standard.set(isLoggedIn, forKey: "login")
+        }
+    }
+    
+    @Published var username: String {
+        didSet {
+            UserDefaults.standard.set(username, forKey: "username")
+        }
+    }
+    
+    @Published var score: [Int: Int] {
+        didSet {
+            UserDefaults.standard.set(score, forKey: "scores")
+        }
+    }
+    
+    @Published var watchedMovieIDs: [Int] {
+        didSet {
+            UserDefaults.standard.set(watchedMovieIDs, forKey: "watchedMovieIDs")
+        }
+    }
+    
+    @Published var savedMovieIDs: [Int] {
+        didSet {
+            UserDefaults.standard.set(savedMovieIDs, forKey: "savedMovieIDs")
+        }
+    }
+    
+    init() {
+        self.isLoggedIn = UserDefaults.standard.bool(forKey: "login")
+        self.username = UserDefaults.standard.string(forKey: "username") ?? "user123"
+        self.score = UserDefaults.standard.dictionary(forKey: "scores") as? [Int: Int] ?? [:]
+        self.watchedMovieIDs = UserDefaults.standard.array(forKey: "watchedMovieIDs") as? [Int] ?? []
+        self.savedMovieIDs = UserDefaults.standard.array(forKey: "savedMovieIDs") as? [Int] ?? []
+    }
+    
+    func setScore(value: Int, forMovieId movieId: Int) {
+        score[movieId] = value
+    }
+    
+    func getScore(forMovieId movieId: Int) -> Int? {
+        return score[movieId]
+    }
+    
+    func addMovieID(_ movieID: Int) {
+        if !watchedMovieIDs.contains(movieID) {
+            watchedMovieIDs.append(movieID)
+        }
+    }
+    
+    func removeMovieID(_ movieID: Int) {
+        if let index = watchedMovieIDs.firstIndex(of: movieID) {
+            watchedMovieIDs.remove(at: index)
+        }
+    }
+    
+    func saveMovieID(_ movieID: Int) {
+        if !savedMovieIDs.contains(movieID) {
+            savedMovieIDs.append(movieID)
+        }
+    }
+    
+    func unSaveMovieID(_ movieID: Int) {
+        if let index = savedMovieIDs.firstIndex(of: movieID) {
+            savedMovieIDs.remove(at: index)
+        }
+    }
+}
+

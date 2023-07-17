@@ -10,20 +10,13 @@
 import SwiftUI
 
 struct MovieListView: View {
-    
-    @EnvironmentObject var settings: UserSettings
+    @StateObject private var settings = UserSettings()
     
     @ObservedObject private var nowPlayingState = MovieListState()
     @ObservedObject private var upcomingState = MovieListState()
     @ObservedObject private var topRatedState = MovieListState()
     @ObservedObject private var popularState = MovieListState()
-    
     @ObservedObject var movieSearchState = MovieSearchState()
-    
-    @State private var isPresentingSearch = false
-    
-    let username: String
-    var isLoggedIn: Bool = false
     
     var body: some View {
         NavigationView {
@@ -122,27 +115,20 @@ struct MovieListView: View {
                 .padding(.top, 10)
                 
             }
-            .navigationTitle(getWelcomeMessage())
+            .navigationTitle(settings.isLoggedIn ? "Welcome, \(settings.username)" : "Welcome, stranger")
         }
+        .environmentObject(settings)
         .onAppear {
             self.upcomingState.loadMovies(from: .upcoming, page: 1)
             self.topRatedState.loadMovies(from: .topRated, page: 1)
             self.popularState.loadMovies(from: .popular, page: 1)
         }
     }
-    
-    private func getWelcomeMessage() -> String {
-        if isLoggedIn == false {
-            return "Welcome, stranger"
-        } else {
-            return "Welcome, user123"
-        }
-    }
 }
 
 struct MovieListView_Previews: PreviewProvider {
     static var previews: some View {
-        MovieListView(username: "user123", isLoggedIn: false)
+        MovieListView()
     }
 }
 

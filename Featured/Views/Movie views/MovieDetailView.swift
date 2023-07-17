@@ -9,14 +9,11 @@
 
 import SwiftUI
 
-class UserAuth: ObservableObject {
-    @Published var isLoggedIn = false
-}
-
 struct MovieDetailView: View {
     let movieId: Int
     @ObservedObject private var movieDetailState = MovieDetailState()
-    @State private var isLoggedIn = UserDefaults.standard.bool(forKey: UserDefaults.UserDefaultsKeys.isLoggedIn.rawValue)
+    
+    @EnvironmentObject var settings: UserSettings
 
     var body: some View {
         ZStack {
@@ -25,7 +22,7 @@ struct MovieDetailView: View {
             }
             
             if movieDetailState.movie != nil {
-                MovieDetailListView(movie: self.movieDetailState.movie!, provider: nil, username: "", isLoggedIn: false)
+                MovieDetailListView(movie: self.movieDetailState.movie!, provider: nil, username: "")
             }
         }
         .onAppear {
@@ -38,8 +35,7 @@ struct MovieDetailView: View {
 
 struct MovieDetailListView: View {
     
-    @EnvironmentObject var userAuth: UserAuth
-    @EnvironmentObject var settings: UserSettings
+    @StateObject private var settings = UserSettings()
     
     struct CustomColor {
         static let locked = Color("locked")
@@ -52,12 +48,10 @@ struct MovieDetailListView: View {
     @ObservedObject private var imageLoader = ImageLoader()
     
     let username: String
-    @State var isLoggedIn: Bool
 
-    @State private var selectedScore = Int()
+    @State private var selectedScore: Int?
     @State private var watchedOn = false
     @State private var savedOn = false
-    @State private var isMovieSaved: Bool = false
     
     @StateObject private var viewModel = MovieProviderViewModel()
     
@@ -103,11 +97,10 @@ struct MovieDetailListView: View {
                         Spacer()
                         
                         HStack {
-                            if UserDefaults.standard.bool(forKey: "login") {
+                            if settings.isLoggedIn {
                                 VStack {
-                                    Picker("Add a score", selection: $selectedScore) {
+                                    Picker("Add a score", selection: $settings.score) { // Use the score property from UserSettings
                                         Text("Add a score").tag(nil as Int?)
-                                        
                                         ForEach(1...10, id: \.self) { score in
                                             Text("\(score)/10").tag(score)
                                         }
@@ -120,7 +113,6 @@ struct MovieDetailListView: View {
                                     )
                                     .labelsHidden()
                                 }
-                                
                             } else {
                                 Text("User not logged in")
                                     .foregroundColor(CustomColor.locked)
@@ -156,19 +148,20 @@ struct MovieDetailListView: View {
                         .frame(width: 30)
                     
                     Button(action: {
-                        if userAuth.isLoggedIn {
-                            if watchedOn {
-                                UserDefaults.standard.setWatchedMovieCount(value: false, id: movie.id)
-                            } else {
-                                UserDefaults.standard.setWatchedMovieCount(value: true, id: movie.id)
-                            }
-                            watchedOn.toggle()
+                        if settings.isLoggedIn, watchedOn {
+                            UserDefaults.standard.setWatchedMovieCount(value: false, movieId: movie.id, durationText: movie.durationText)
+                            settings.removeMovieID(movie.id) // Remove movie ID from savedMovieIDs
+                        } else {
+                            UserDefaults.standard.setWatchedMovieCount(value: true, movieId: movie.id, durationText: movie.durationText)
+                            settings.addMovieID(movie.id) // Save movie ID to savedMovieIDs
                         }
+                        watchedOn.toggle()
+                        print(settings.watchedMovieIDs)
                     }) {
                         VStack(spacing: 3) {
-                            if userAuth.isLoggedIn {
+                            if !settings.isLoggedIn {
                                 Image("Watch (locked)")
-                                Text("watch").foregroundColor(CustomColor.locked)
+                                Text("Watch").foregroundColor(CustomColor.locked)
                             } else if watchedOn {
                                 Image("Watched")
                                 Text("Tracked")
@@ -178,26 +171,25 @@ struct MovieDetailListView: View {
                             }
                         }
                     }
-                    .disabled(!userAuth.isLoggedIn)
+                    .disabled(!settings.isLoggedIn)
                     .onAppear {
-                        watchedOn = UserDefaults.standard.getWatchedState(id: movie.id)
+                        watchedOn = UserDefaults.standard.getWatchedState(movieId: movie.id)
                     }
-
                     
                     Spacer()
                     
                     Button(action: { // Save button
-                        if UserDefaults.standard.bool(forKey: "login") {
-                            if savedOn {
-                                UserDefaults.standard.setSavedState(value: false, forMovieId: movie.id)
-                            } else {
-                                UserDefaults.standard.setSavedState(value: true, forMovieId: movie.id)
-                            }
-                            savedOn.toggle()
+                        if settings.isLoggedIn, savedOn {
+                            UserDefaults.standard.setSavedState(value: false, movieId: movie.id)
+                            settings.unSaveMovieID(movie.id)
+                        } else {
+                            UserDefaults.standard.setSavedState(value: true, movieId: movie.id)
+                            settings.saveMovieID(movie.id)
                         }
+                        savedOn.toggle()
                     }) {
                         VStack(spacing: 3) {
-                            if !UserDefaults.standard.bool(forKey: "login") {
+                            if !settings.isLoggedIn {
                                 Image("Save (locked)")
                                 Text("Save").foregroundColor(CustomColor.locked)
                             } else if savedOn {
@@ -209,10 +201,10 @@ struct MovieDetailListView: View {
                             }
                         }
                     }
+                    .disabled(!settings.isLoggedIn)
                     .onAppear {
-                        savedOn = UserDefaults.standard.getSavedState(forMovieId: movie.id)
+                        savedOn = UserDefaults.standard.getSavedState(movieId: movie.id)
                     }
-                    .disabled(!UserDefaults.standard.bool(forKey: "login"))
 
                     Spacer()
                     
@@ -304,6 +296,7 @@ struct MovieDetailListView: View {
             }
             .padding()
         }
+        .environmentObject(settings)
         .edgesIgnoringSafeArea(.top)
     }
 }
