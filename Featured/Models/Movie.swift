@@ -101,7 +101,7 @@ struct Movie: Decodable, Identifiable, Hashable {
         }
         
         let dateFormatter = DateFormatter()
-        dateFormatter.dateFormat = "dd MMM, yyyy" // Set the desired date format
+        dateFormatter.dateFormat = "dd MMM, yyyy"
         return dateFormatter.string(from: date)
     }
     

@@ -22,7 +22,8 @@ class MovieStore: MovieService {
     let jsonDecoder = Utils.jsonDecoder
     
     func fetchMovies(from endpoint: MovieListEndpoint, page: Int, completion: @escaping (Result<MovieResponse, MovieError>) -> ()) {
-        guard let url = URL(string: "\(baseAPIURL)/movie/\(endpoint.rawValue)?api_key=\(apiKey)&page=\(page)&include_adult=false&watch_region=NL") else {
+        guard let url = URL(string: "\(baseAPIURL)/movie/\(endpoint.rawValue)?api_key=\(apiKey)&page=\(page)&include_adult=false&watch_region=NL")
+        else {
             completion(.failure(.invalidEndpoint))
             return
         }
@@ -31,7 +32,8 @@ class MovieStore: MovieService {
     }
     
     func fetchMovie(id: Int, completion: @escaping (Result<Movie, MovieError>) -> ()) {
-        guard let url = URL(string: "\(baseAPIURL)/movie/\(id)&include_adult=false&watch_region=NL") else {
+        guard let url = URL(string: "\(baseAPIURL)/movie/\(id)&include_adult=false&watch_region=NL")
+        else {
             completion(.failure(.invalidEndpoint))
             return
         }
@@ -41,7 +43,8 @@ class MovieStore: MovieService {
     }
     
     func searchMovie(query: String, completion: @escaping (Result<MovieResponse, MovieError>) -> ()) {
-        guard let url = URL(string: "\(baseAPIURL)/search/movie") else {
+        guard let url = URL(string: "\(baseAPIURL)/search/movie")
+        else {
             completion(.failure(.invalidEndpoint))
             return
         }
@@ -53,7 +56,7 @@ class MovieStore: MovieService {
         ], completion: completion)
     }
     
-    private func loadURLAndDecode<D: Decodable>(url: URL, params: [String: String]? = nil, completion: @escaping (Result<D, MovieError>) -> ()) {
+    private func loadURLAndDecode<MovieResponse: Decodable>(url: URL, params: [String: String]? = nil, completion: @escaping (Result<MovieResponse, MovieError>) -> ()) {
         guard var urlComponents = URLComponents(url: url, resolvingAgainstBaseURL: false) else {
             completion(.failure(.invalidEndpoint))
             return
@@ -90,7 +93,7 @@ class MovieStore: MovieService {
             }
             
             do {
-                let decodedResponse = try self.jsonDecoder.decode(D.self, from: data)
+                let decodedResponse = try self.jsonDecoder.decode(MovieResponse.self, from: data)
                 self.executeCompletionHandlerInMainThread(with: .success(decodedResponse), completion: completion)
             } catch {
                 self.executeCompletionHandlerInMainThread(with: .failure(.serializationError), completion: completion)
@@ -98,7 +101,7 @@ class MovieStore: MovieService {
         }.resume()
     }
     
-    private func executeCompletionHandlerInMainThread<D: Decodable>(with result: Result<D, MovieError>, completion: @escaping (Result<D, MovieError>) -> ()) {
+    private func executeCompletionHandlerInMainThread<MovieResponse: Decodable>(with result: Result<MovieResponse, MovieError>, completion: @escaping (Result<MovieResponse, MovieError>) -> ()) {
         DispatchQueue.main.async {
             completion(result)
         }

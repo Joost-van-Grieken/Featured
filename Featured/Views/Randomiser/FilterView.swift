@@ -12,9 +12,11 @@ import SwiftUI
 struct FilterView: View {
     @Environment(\.presentationMode) var presentationMode
     @Binding var numOption: Int
-    @Binding var selectedEndpoint: MovieListEndpoint 
     @ObservedObject var selectedGenresViewModel = SelectedGenresViewModel()
     @ObservedObject var selectedProviderViewModel = SelectedProviderViewModel()
+    @ObservedObject var selectedLanguageViewModel = SelectedLanguageViewModel()
+    @ObservedObject var selectedEraViewModel = SelectedEraViewModel()
+    @ObservedObject var selectedScoreViewModel = SelectedScoreViewModel()
     
     struct CustomColor {
         static let textColor = Color("textColor")
@@ -32,35 +34,55 @@ struct FilterView: View {
                     }
                     .pickerStyle(.menu)
                     
-                    Picker("Movie list", selection: $selectedEndpoint) {
-                        ForEach(MovieListEndpoint.allCases) { endpoint in
-                            Text(endpoint.description)
-                                .tag(endpoint)
-                        }
-                    }
-                    .pickerStyle(.menu)
-                    
                     NavigationLink(destination: GenreView(viewModel: GenreViewModel())
-                                    .environmentObject(selectedGenresViewModel)) {
-                        HStack {
-                            Text("Genres")
-                            if !selectedGenresViewModel.selectedGenres.isEmpty {
-                                Text(selectedGenresViewModel.selectedGenreNames())
-                                    .foregroundColor(.gray)
+                        .environmentObject(selectedGenresViewModel)) {
+                            HStack {
+                                Text("Genres")
+                                if !selectedGenresViewModel.selectedGenres.isEmpty {
+                                    Text(selectedGenresViewModel.selectedGenreNames())
+                                        .foregroundColor(.gray)
+                                }
                             }
                         }
-                    }
                     
                     NavigationLink(destination: ProviderView(viewModel: ProviderViewModel())
-                                    .environmentObject(selectedProviderViewModel)) {
-                        HStack {
-                            Text("Providers")
-                            if !selectedProviderViewModel.selectedProvider.isEmpty {
-                                Text(selectedProviderViewModel.selectedProviderNames())
-                                    .foregroundColor(.gray)
+                        .environmentObject(selectedProviderViewModel)) {
+                            HStack {
+                                Text("Providers")
+                                if !selectedProviderViewModel.selectedProvider.isEmpty {
+                                    Text(selectedProviderViewModel.selectedProviderNames())
+                                        .foregroundColor(.gray)
+                                }
                             }
                         }
+                    
+                    NavigationLink(destination: LanguageView(viewModel: LanguageViewModel())
+                        .environmentObject(selectedLanguageViewModel)) {
+                            HStack {
+                                Text("Languages")
+                                if !selectedLanguageViewModel.selectedLanguages.isEmpty {
+                                    Text(selectedLanguageViewModel.selectedLanguageNames())
+                                        .foregroundColor(.gray)
+                                }
+                            }
+                        }
+                    
+                    List(selectedEraViewModel.eraViewModel.eraRanges, id: \.self) { eraRange in
+                        NavigationLink(destination: EraDetailView(eraRange: eraRange)) {
+                            Text("Era \(eraRange.lowerBound) to \(eraRange.upperBound)")
+                        }
                     }
+                    
+                    NavigationLink(destination: ScoreView(viewModel: ScoreViewModel())
+                        .environmentObject(selectedScoreViewModel)) {
+                            HStack {
+                                Text("Rating")
+                                if !selectedScoreViewModel.selectedScoreItems.isEmpty {
+                                    Text(selectedScoreViewModel.selectedScores())
+                                        .foregroundColor(.gray)
+                                }
+                            }
+                        }
                 }
                 .foregroundColor(CustomColor.textColor)
                 
@@ -70,6 +92,9 @@ struct FilterView: View {
                     presentationMode.wrappedValue.dismiss()
                     print(selectedGenresViewModel.selectedGenres)
                     print(selectedProviderViewModel.selectedProvider)
+                    print(selectedLanguageViewModel.selectedLanguages)
+
+                    print(selectedScoreViewModel.selectedScores)
                 }) {
                     Text("Done")
                         .foregroundColor(.white)
@@ -85,36 +110,24 @@ struct FilterView: View {
 
 struct FilterView_Previews: PreviewProvider {
     static var previews: some View {
-        FilterView(numOption: .constant(3), selectedEndpoint: .constant(.popular))
+        FilterView(numOption: .constant(3))
     }
 }
 
-// MARK: Genre filter view
 
+// MARK: Genre filter view
 class SelectedGenresViewModel: ObservableObject {
     @Published var selectedGenres: Set<Genre> = []
     
     func selectedGenreNames() -> String {
-        return selectedGenres.map { $0.name }.joined(separator: ", ")
+        return selectedGenres.map { $0.name }.joined(separator: ",")
     }
 }
-
-// MARK: provider filter view
-
-class SelectedProviderViewModel: ObservableObject {
-    @Published var selectedProvider: Set<Provider> = []
-    
-    func selectedProviderNames() -> String {
-        return selectedProvider.map { $0.provider_name }.joined(separator: ", ")
-    }
-}
-
-// MARK: Haal de informatie van de genre API call
 
 struct GenreView: View {
     @Environment(\.presentationMode) var presentationMode
     @EnvironmentObject var selectedGenresViewModel: SelectedGenresViewModel
-    @ObservedObject var viewModel: GenreViewModel
+    @StateObject var viewModel: GenreViewModel
     
     struct CustomColor {
         static let textColor = Color("textColor")
@@ -167,12 +180,20 @@ struct GenreView: View {
     }
 }
 
-// MARK: Haalt de informatie van de provider API call
+// MARK: provider filter view
+
+class SelectedProviderViewModel: ObservableObject {
+    @Published var selectedProvider: Set<Provider> = []
+    
+    func selectedProviderNames() -> String {
+        return selectedProvider.map { $0.provider_name }.joined(separator: ",")
+    }
+}
 
 struct ProviderView: View {
     @Environment(\.presentationMode) var presentationMode
     @EnvironmentObject var selectedProviderViewModel: SelectedProviderViewModel
-    @ObservedObject var viewModel: ProviderViewModel
+    @StateObject var viewModel: ProviderViewModel
     
     struct CustomColor {
         static let textColor = Color("textColor")
@@ -221,6 +242,235 @@ struct ProviderView: View {
     }
     
     private func dismissProviderView() {
+        presentationMode.wrappedValue.dismiss()
+    }
+}
+
+// MARK: language filter view
+class SelectedLanguageViewModel: ObservableObject {
+    @Published var selectedLanguages: Set<Language> = []
+    
+    func selectedLanguageNames() -> String {
+        return selectedLanguages.map { $0.english_name }.joined(separator: ",")
+    }
+}
+
+struct LanguageView: View {
+    @Environment(\.presentationMode) var presentationMode
+    @EnvironmentObject var selectedLanguageViewModel: SelectedLanguageViewModel
+    @StateObject var viewModel: LanguageViewModel
+    
+    struct CustomColor {
+        static let textColor = Color("textColor")
+    }
+    
+    var body: some View {
+        VStack {
+            List(viewModel.languages, id: \.iso639_1) { language in
+                Button(action: {
+                    toggleLanguageSelection(language)
+                }) {
+                    HStack {
+                        Text(language.english_name)
+                            .foregroundColor(CustomColor.textColor)
+                        Spacer()
+                        if selectedLanguageViewModel.selectedLanguages.contains(language) {
+                            Image(systemName: "checkmark")
+                                .foregroundColor(Color.accentColor)
+                        }
+                    }
+                }
+            }
+            
+            Button(action: {
+                dismissLanguageView()
+                print(selectedLanguageViewModel.selectedLanguages)
+            }) {
+                Text("Submit")
+                    .foregroundColor(.white)
+                    .frame(width: 300, height: 50)
+                    .background(Color.accentColor)
+                    .cornerRadius(10)
+            }
+        }
+        .onAppear {
+            viewModel.fetchLanguages()
+            print("LanguageView appeared")
+        }
+    }
+    
+    private func toggleLanguageSelection(_ language: Language) {
+        if selectedLanguageViewModel.selectedLanguages.contains(language) {
+            selectedLanguageViewModel.selectedLanguages.remove(language)
+        } else {
+            selectedLanguageViewModel.selectedLanguages.insert(language)
+        }
+    }
+    
+    private func dismissLanguageView() {
+        presentationMode.wrappedValue.dismiss()
+    }
+}
+
+
+// MARK: Era filter view
+struct EraDetailView: View {
+    @Environment(\.presentationMode) var presentationMode
+    @EnvironmentObject var selectedEraViewModel: SelectedEraViewModel
+
+    var eraRange: ClosedRange<Int>
+
+    var body: some View {
+        VStack {
+            Text("Era \(eraRange.lowerBound) to \(eraRange.upperBound)")
+                .navigationBarTitle("Era \(eraRange.lowerBound) - \(eraRange.upperBound)")
+
+            Button(action: {
+                toggleEraSelection(eraRange)
+            }) {
+                Text(selectedEraViewModel.selectedEras.contains(eraRange) ? "Deselect Era" : "Select Era")
+            }
+            .foregroundColor(.white)
+            .frame(width: 300, height: 50)
+            .background(selectedEraViewModel.selectedEras.contains(eraRange) ? Color.red : Color.accentColor)
+            .cornerRadius(10)
+
+            Spacer()
+
+            Button(action: {
+                dismissEraView()
+                print(selectedEraViewModel.selectedEraNames())
+            }) {
+                Text("Submit")
+                    .foregroundColor(.white)
+                    .frame(width: 300, height: 50)
+                    .background(Color.accentColor)
+                    .cornerRadius(10)
+            }
+        }
+    }
+
+    private func toggleEraSelection(_ eraRange: ClosedRange<Int>) {
+        if selectedEraViewModel.selectedEras.contains(eraRange) {
+            selectedEraViewModel.selectedEras.remove(eraRange)
+        } else {
+            selectedEraViewModel.selectedEras.insert(eraRange)
+        }
+    }
+
+    private func dismissEraView() {
+        presentationMode.wrappedValue.dismiss()
+    }
+}
+
+class SelectedEraViewModel: ObservableObject {
+    @Published var selectedEras: Set<ClosedRange<Int>> = []
+    
+    func selectedEraNames() -> String {
+        return selectedEras.map { "Era \($0.lowerBound) to \($0.upperBound)" }.joined(separator: ", ")
+    }
+
+    var eraViewModel = EraViewModel()
+}
+
+class EraViewModel: ObservableObject {
+    private let startYear = 1900
+    private let endYear = 2020
+
+    var eraRanges: [ClosedRange<Int>] {
+        var eraRanges = [ClosedRange<Int>]()
+        for year in stride(from: startYear, through: endYear, by: 10) {
+            eraRanges.append(year...(year + 9))
+        }
+        return eraRanges
+    }
+}
+
+
+// MARK: Score filter view
+struct ScoreItem: Codable, Identifiable, Hashable {
+    let id: Int
+    let value: Int
+
+    static func ==(lhs: ScoreItem, rhs: ScoreItem) -> Bool {
+        return lhs.id == rhs.id
+        && lhs.value == rhs.value
+    }
+}
+
+class ScoreViewModel: ObservableObject {
+    @Published var scores: [ScoreItem]
+
+    init() {
+        scores = [
+            ScoreItem(id: 1, value: 1),
+            ScoreItem(id: 2, value: 3),
+            ScoreItem(id: 3, value: 4),
+            ScoreItem(id: 4, value: 6),
+            ScoreItem(id: 5, value: 7)
+        ]
+    }
+}
+
+class SelectedScoreViewModel: ObservableObject {
+    @Published var selectedScoreItems: Set<ScoreItem> = []
+    
+    func selectedScores() -> String {
+        let selectedItemsArray = Array(selectedScoreItems)
+        return selectedItemsArray.map { String($0.id) }.joined(separator: ",")
+    }
+}
+
+struct ScoreView: View {
+    @Environment(\.presentationMode) var presentationMode
+    @EnvironmentObject var selectedScoreViewModel: SelectedScoreViewModel
+    @StateObject var viewModel: ScoreViewModel
+
+    struct CustomColor {
+        static let textColor = Color("textColor")
+    }
+
+    var body: some View {
+        VStack {
+            List(viewModel.scores) { scoreItem in
+                Button(action: {
+                    toggleScoreSelection(scoreItem)
+                }) {
+                    HStack {
+                        ForEach(1...5, id: \.self) { index in
+                            Image(systemName: index <= scoreItem.id ? "star.fill" : "star")
+                                .foregroundColor(index <= scoreItem.id ? .accentColor : .gray)
+                        }
+                        Spacer()
+                        if selectedScoreViewModel.selectedScoreItems.contains(scoreItem) {
+                            Image(systemName: "checkmark")
+                                .foregroundColor(Color.accentColor)
+                        }
+                    }
+                }
+            }
+            
+            Button(action: {
+                dismissScoreView()
+            }) {
+                Text("Submit")
+                    .foregroundColor(.white)
+                    .frame(width: 300, height: 50)
+                    .background(Color.accentColor)
+                    .cornerRadius(10)
+            }
+        }
+    }
+
+    private func toggleScoreSelection(_ scoreItem: ScoreItem) {
+        if selectedScoreViewModel.selectedScoreItems.contains(scoreItem) {
+            selectedScoreViewModel.selectedScoreItems.remove(scoreItem)
+        } else {
+            selectedScoreViewModel.selectedScoreItems.insert(scoreItem)
+        }
+    }
+
+    private func dismissScoreView() {
         presentationMode.wrappedValue.dismiss()
     }
 }

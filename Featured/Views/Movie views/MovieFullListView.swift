@@ -56,10 +56,10 @@ struct MovieFullListView: View {
                                 Button(action: { // Watch button
                                     if !settings.isLoggedIn, watchedOn {
                                         UserDefaults.standard.setWatchedMovieCount(value: false, movieId: movie.id, durationText: movie.durationText)
-                                        settings.removeMovieID(movie.id)
+                                        settings.removeMovieID(movieID: movie.id)
                                     } else {
                                         UserDefaults.standard.setWatchedMovieCount(value: true, movieId: movie.id, durationText: movie.durationText)
-                                        settings.addMovieID(movie.id)
+                                        settings.addMovieID(movieID: movie.id)
                                     }
                                     watchedOn.toggle()
                                 }) {
@@ -89,10 +89,10 @@ struct MovieFullListView: View {
                                 Button(action: { // Save button
                                     if !settings.isLoggedIn, savedOn {
                                         UserDefaults.standard.setSavedState(value: false, movieId: movie.id)
-                                        settings.unSaveMovieID(movie.id)
+                                        settings.unSaveMovieID(movieID: movie.id)
                                     } else {
                                         UserDefaults.standard.setSavedState(value: true, movieId: movie.id)
-                                        settings.saveMovieID(movie.id)
+                                        settings.saveMovieID(movieID: movie.id)
                                     }
                                     savedOn.toggle()
                                 }) {

@@ -41,5 +41,6 @@ class MovieListState: ObservableObject {
         let nextPage = currentPage + 1
         loadMovies(from: endpoint, page: nextPage)
         currentPage = nextPage
+        print("current page is", currentPage)
     }
 }

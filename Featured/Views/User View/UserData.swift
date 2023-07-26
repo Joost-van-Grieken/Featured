@@ -17,7 +17,7 @@ extension UserDefaults: ObservableObject {
         
         case watchedState
         case watchedCount
-        case totalWatchedMinutes
+//        case totalWatchedMinutes
         case savedState
         case rated
     }
@@ -34,18 +34,18 @@ extension UserDefaults: ObservableObject {
     
     //MARK: - Duration
     
-    var totalWatchedMinutes: Int {
-        get {
-            return integer(forKey: UserDefaultsKeys.totalWatchedMinutes.rawValue)
-        }
-        set {
-            set(newValue, forKey: UserDefaultsKeys.totalWatchedMinutes.rawValue)
-        }
-    }
-    
-    var totalWatchedMinutesInMinutes: Int {
-        return totalWatchedMinutes % 60
-    }
+//    var totalWatchedMinutes: Int {
+//        get {
+//            return integer(forKey: UserDefaultsKeys.totalWatchedMinutes.rawValue)
+//        }
+//        set {
+//            set(newValue, forKey: UserDefaultsKeys.totalWatchedMinutes.rawValue)
+//        }
+//    }
+//
+//    var totalWatchedMinutesInMinutes: Int {
+//        return totalWatchedMinutes % 60
+//    }
     
     //MARK: - Movie Count
     
@@ -68,16 +68,16 @@ extension UserDefaults: ObservableObject {
 
             if value {
                 count += 1
-                if durationText != nil {
-                    let movieDuration = extractDurationInMinutes(from: durationText!)
-                    totalWatchedMinutes += movieDuration
-                }
+//                if durationText != nil {
+//                    let movieDuration = extractDurationInMinutes(from: durationText!)
+//                    totalWatchedMinutes += movieDuration
+//                }
             } else {
                 count -= 1
-                if let durationText = durationText {
-                    let movieDuration = extractDurationInMinutes(from: durationText)
-                    totalWatchedMinutes -= movieDuration
-                }
+//                if let durationText = durationText {
+//                    let movieDuration = extractDurationInMinutes(from: durationText)
+//                    totalWatchedMinutes -= movieDuration
+//                }
             }
             count = max(count, 0)
 
@@ -85,13 +85,13 @@ extension UserDefaults: ObservableObject {
         }
     }
     
-    private func extractDurationInMinutes(from durationText: String) -> Int {
-        let components = durationText.components(separatedBy: " ")
-        if let minutesString = components.first, let minutes = Int(minutesString) {
-            return minutes
-        }
-        return 0
-    }
+//    private func extractDurationInMinutes(from durationText: String) -> Int {
+//        let components = durationText.components(separatedBy: " ")
+//        if let minutesString = components.first, let minutes = Int(minutesString) {
+//            return minutes
+//        }
+//        return 0
+//    }
     
     func getWatchedMovieCount() -> Int {
         return integer(forKey: UserDefaultsKeys.watchedCount.rawValue)
@@ -109,11 +109,11 @@ extension UserDefaults: ObservableObject {
     
     //MARK: - Rated
     
-    func setRatedState(value: Double) {
+    func setRatedState(value: Double, movieId: Int) {
         set(value, forKey: UserDefaultsKeys.rated.rawValue)
     }
-    
-    func getRatedState() -> Double {
+
+    func getRatedState(movieId: Int) -> Double {
         return double(forKey: UserDefaultsKeys.rated.rawValue)
     }
 }
@@ -133,9 +133,9 @@ class UserSettings: ObservableObject {
         }
     }
     
-    @Published var score: [Int: Int] {
+    @Published var rating: [Int: Int] {
         didSet {
-            UserDefaults.standard.set(score, forKey: "scores")
+            UserDefaults.standard.set(rating, forKey: "rating")
         }
     }
     
@@ -154,38 +154,38 @@ class UserSettings: ObservableObject {
     init() {
         self.isLoggedIn = UserDefaults.standard.bool(forKey: "login")
         self.username = UserDefaults.standard.string(forKey: "username") ?? "user123"
-        self.score = UserDefaults.standard.dictionary(forKey: "scores") as? [Int: Int] ?? [:]
+        self.rating = UserDefaults.standard.dictionary(forKey: "rating") as? [Int: Int] ?? [:]
         self.watchedMovieIDs = UserDefaults.standard.array(forKey: "watchedMovieIDs") as? [Int] ?? []
         self.savedMovieIDs = UserDefaults.standard.array(forKey: "savedMovieIDs") as? [Int] ?? []
     }
     
-    func setScore(value: Int, forMovieId movieId: Int) {
-        score[movieId] = value
+    func setRating(value: Int, movieID: Int) {
+        rating[movieID] = value
+    }
+
+    func getRating(movieID: Int) -> Int? {
+        return rating[movieID]
     }
     
-    func getScore(forMovieId movieId: Int) -> Int? {
-        return score[movieId]
-    }
-    
-    func addMovieID(_ movieID: Int) {
+    func addMovieID(movieID: Int) {
         if !watchedMovieIDs.contains(movieID) {
             watchedMovieIDs.append(movieID)
         }
     }
     
-    func removeMovieID(_ movieID: Int) {
+    func removeMovieID(movieID: Int) {
         if let index = watchedMovieIDs.firstIndex(of: movieID) {
             watchedMovieIDs.remove(at: index)
         }
     }
     
-    func saveMovieID(_ movieID: Int) {
+    func saveMovieID(movieID: Int) {
         if !savedMovieIDs.contains(movieID) {
             savedMovieIDs.append(movieID)
         }
     }
     
-    func unSaveMovieID(_ movieID: Int) {
+    func unSaveMovieID(movieID: Int) {
         if let index = savedMovieIDs.firstIndex(of: movieID) {
             savedMovieIDs.remove(at: index)
         }

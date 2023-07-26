@@ -99,10 +99,10 @@ struct MovieDetailListView: View {
                         HStack {
                             if settings.isLoggedIn {
                                 VStack {
-                                    Picker("Add a score", selection: $settings.score) { // Use the score property from UserSettings
+                                    Picker("Add a score", selection: $selectedScore) {
                                         Text("Add a score").tag(nil as Int?)
                                         ForEach(1...10, id: \.self) { score in
-                                            Text("\(score)/10").tag(score)
+                                            Text("\(score)/10").tag(score as Int?)
                                         }
                                     }
                                     .pickerStyle(DefaultPickerStyle())
@@ -112,6 +112,9 @@ struct MovieDetailListView: View {
                                             .stroke(Color.accentColor, lineWidth: 2)
                                     )
                                     .labelsHidden()
+//                                    .onAppear() {
+//                                        selectedScore = Int(UserDefaults.standard.getRatedState(movieId: movie.id))
+//                                    }
                                 }
                             } else {
                                 Text("User not logged in")
@@ -150,10 +153,10 @@ struct MovieDetailListView: View {
                     Button(action: {
                         if settings.isLoggedIn, watchedOn {
                             UserDefaults.standard.setWatchedMovieCount(value: false, movieId: movie.id, durationText: movie.durationText)
-                            settings.removeMovieID(movie.id) // Remove movie ID from savedMovieIDs
+                            settings.removeMovieID(movieID: movie.id) // Remove movie ID from savedMovieIDs
                         } else {
                             UserDefaults.standard.setWatchedMovieCount(value: true, movieId: movie.id, durationText: movie.durationText)
-                            settings.addMovieID(movie.id) // Save movie ID to savedMovieIDs
+                            settings.addMovieID(movieID: movie.id) // Save movie ID to savedMovieIDs
                         }
                         watchedOn.toggle()
                         print(settings.watchedMovieIDs)
@@ -181,10 +184,10 @@ struct MovieDetailListView: View {
                     Button(action: { // Save button
                         if settings.isLoggedIn, savedOn {
                             UserDefaults.standard.setSavedState(value: false, movieId: movie.id)
-                            settings.unSaveMovieID(movie.id)
+                            settings.unSaveMovieID(movieID: movie.id)
                         } else {
                             UserDefaults.standard.setSavedState(value: true, movieId: movie.id)
-                            settings.saveMovieID(movie.id)
+                            settings.saveMovieID(movieID: movie.id)
                         }
                         savedOn.toggle()
                     }) {
