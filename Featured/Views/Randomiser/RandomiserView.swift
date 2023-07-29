@@ -26,8 +26,9 @@ struct RandomiserView: View {
     @StateObject var selectedProviderViewModel = SelectedProviderViewModel()
     @StateObject var selectedLanguageViewModel = SelectedLanguageViewModel()
     @StateObject var selectedEraViewModel = SelectedEraViewModel()
-    
     @StateObject var selectedScoreViewModel = SelectedScoreViewModel()
+    
+    @State var savedForLater = false
     
     var totalPages: RandomMovieStore
     
@@ -47,7 +48,13 @@ struct RandomiserView: View {
                         .background(Color.accentColor)
                         .cornerRadius(10)
                         .sheet(isPresented: $isShowingFilters) {
-                            FilterView(numOption: $numOption, selectedGenresViewModel: selectedGenresViewModel, selectedProviderViewModel: selectedProviderViewModel, selectedLanguageViewModel: selectedLanguageViewModel, selectedEraViewModel: selectedEraViewModel, selectedScoreViewModel: selectedScoreViewModel)
+                            FilterView(numOption: $numOption,
+                                       selectedGenresViewModel: selectedGenresViewModel,
+                                       selectedProviderViewModel: selectedProviderViewModel,
+                                       selectedLanguageViewModel: selectedLanguageViewModel,
+                                       selectedEraViewModel: selectedEraViewModel,
+                                       selectedScoreViewModel: selectedScoreViewModel,
+                                       savedForLater: false)
                         }
 
                 }
@@ -172,16 +179,15 @@ func performTask(numOption: Int, selectedGenresViewModel: SelectedGenresViewMode
     let selectedGenresIDs = selectedGenresViewModel.selectedGenres.map(\.id)
     let selectedProviderIDs = Array(selectedProviderViewModel.selectedProvider.map(\.provider_id).shuffled().prefix(1))
     let selectedLanguages = selectedLanguageViewModel.selectedLanguages.map(\.iso639_1)
-    let selectedEraNames = [selectedEraViewModel.selectedEraNames()]
+    let selectedEraIDs = selectedEraViewModel.selectedEraItems.map { eraItem in "\(eraItem.id),\(eraItem.value.map(String.init).joined(separator: ","))"}
     let selectedScore = selectedScoreViewModel.selectedScoreItems.map { String($0.value) }.joined(separator: ",")
-    
     let scoreArray = selectedScore.components(separatedBy: ",").compactMap { Int($0) }
     
-    RandomMovieStore.shared.fetchTotalPages(genres: selectedGenresIDs, providers: selectedProviderIDs, language: selectedLanguages, era: selectedEraNames, score: scoreArray) { result in
+    RandomMovieStore.shared.fetchTotalPages(genres: selectedGenresIDs, providers: selectedProviderIDs, language: selectedLanguages, era: selectedEraIDs, score: scoreArray) { result in
         switch result {
         case .success(let totalPages):
             let pageNumbers = getRandomPageNumbers(numOption: numOption, totalPages: totalPages)
-            applyFiltersAndFindMovieIDs(pages: pageNumbers, genres: selectedGenresIDs, providers: selectedProviderIDs, language: selectedLanguages, era: selectedEraNames, score: scoreArray) { ids in
+            applyFiltersAndFindMovieIDs(pages: pageNumbers, genres: selectedGenresIDs, providers: selectedProviderIDs, language: selectedLanguages, era: selectedEraIDs, score: scoreArray) { ids in
                 completion(ids, totalPages)
             }
         case .failure(let error):

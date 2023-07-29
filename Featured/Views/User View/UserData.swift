@@ -32,20 +32,6 @@ extension UserDefaults: ObservableObject {
         return bool(forKey: "\(UserDefaultsKeys.watchedState.rawValue)_\(movieId)")
     }
     
-    //MARK: - Duration
-    
-//    var totalWatchedMinutes: Int {
-//        get {
-//            return integer(forKey: UserDefaultsKeys.totalWatchedMinutes.rawValue)
-//        }
-//        set {
-//            set(newValue, forKey: UserDefaultsKeys.totalWatchedMinutes.rawValue)
-//        }
-//    }
-//
-//    var totalWatchedMinutesInMinutes: Int {
-//        return totalWatchedMinutes % 60
-//    }
     
     //MARK: - Movie Count
     
@@ -58,7 +44,7 @@ extension UserDefaults: ObservableObject {
         }
     }
     
-    func setWatchedMovieCount(value: Bool, movieId: Int, durationText: String?) {
+    func setWatchedMovieCount(value: Bool, movieId: Int) {
         let watchedStateKey = "\(UserDefaultsKeys.watchedState.rawValue)_\(movieId)"
         let currentWatchedState = bool(forKey: watchedStateKey)
 
@@ -68,30 +54,14 @@ extension UserDefaults: ObservableObject {
 
             if value {
                 count += 1
-//                if durationText != nil {
-//                    let movieDuration = extractDurationInMinutes(from: durationText!)
-//                    totalWatchedMinutes += movieDuration
-//                }
             } else {
                 count -= 1
-//                if let durationText = durationText {
-//                    let movieDuration = extractDurationInMinutes(from: durationText)
-//                    totalWatchedMinutes -= movieDuration
-//                }
             }
             count = max(count, 0)
 
             watchedMovieCount = count
         }
     }
-    
-//    private func extractDurationInMinutes(from durationText: String) -> Int {
-//        let components = durationText.components(separatedBy: " ")
-//        if let minutesString = components.first, let minutes = Int(minutesString) {
-//            return minutes
-//        }
-//        return 0
-//    }
     
     func getWatchedMovieCount() -> Int {
         return integer(forKey: UserDefaultsKeys.watchedCount.rawValue)

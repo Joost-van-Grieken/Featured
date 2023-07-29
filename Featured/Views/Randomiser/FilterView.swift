@@ -11,12 +11,16 @@ import SwiftUI
 
 struct FilterView: View {
     @Environment(\.presentationMode) var presentationMode
+    @StateObject var settings = UserSettings()
+    
     @Binding var numOption: Int
     @ObservedObject var selectedGenresViewModel = SelectedGenresViewModel()
     @ObservedObject var selectedProviderViewModel = SelectedProviderViewModel()
     @ObservedObject var selectedLanguageViewModel = SelectedLanguageViewModel()
     @ObservedObject var selectedEraViewModel = SelectedEraViewModel()
     @ObservedObject var selectedScoreViewModel = SelectedScoreViewModel()
+    
+    @State var savedForLater = false
     
     struct CustomColor {
         static let textColor = Color("textColor")
@@ -67,11 +71,16 @@ struct FilterView: View {
                             }
                         }
                     
-                    List(selectedEraViewModel.eraViewModel.eraRanges, id: \.self) { eraRange in
-                        NavigationLink(destination: EraDetailView(eraRange: eraRange)) {
-                            Text("Era \(eraRange.lowerBound) to \(eraRange.upperBound)")
+                    NavigationLink(destination: EraView(viewModel: EraViewModel())
+                        .environmentObject(selectedEraViewModel)) {
+                            HStack {
+                                Text("Era's")
+                                if !selectedEraViewModel.selectedEras().isEmpty {
+                                    Text(selectedEraViewModel.selectedEras())
+                                        .foregroundColor(.gray)
+                                }
+                            }
                         }
-                    }
                     
                     NavigationLink(destination: ScoreView(viewModel: ScoreViewModel())
                         .environmentObject(selectedScoreViewModel)) {
@@ -83,6 +92,19 @@ struct FilterView: View {
                                 }
                             }
                         }
+                    Section {
+                        if settings.isLoggedIn {
+                            Toggle(isOn: $savedForLater, label: {
+                                Text("Saved for later")
+                            })
+                        } else {
+                            Toggle(isOn: $savedForLater, label: {
+                                Image(systemName: "lock")
+                                Text("Saved for later")
+                            })
+                            .disabled(true)
+                        }
+                    }
                 }
                 .foregroundColor(CustomColor.textColor)
                 
@@ -295,7 +317,6 @@ struct LanguageView: View {
         }
         .onAppear {
             viewModel.fetchLanguages()
-            print("LanguageView appeared")
         }
     }
     
@@ -314,32 +335,66 @@ struct LanguageView: View {
 
 
 // MARK: Era filter view
-struct EraDetailView: View {
+struct EraItem: Codable, Identifiable, Hashable {
+    let id: Int
+    let value: [Int]
+
+    static func ==(lhs: EraItem, rhs: EraItem) -> Bool {
+        return lhs.id == rhs.id && lhs.value == rhs.value
+    }
+}
+
+class EraViewModel: ObservableObject {
+    @Published var eras: [EraItem]
+    
+    init() {
+        let currentYear = Calendar.current.component(.year, from: Date())
+        let startYearsOfDecades = stride(from: 1900, through: currentYear, by: 10)
+        eras = startYearsOfDecades.compactMap { year in
+            EraItem(id: year, value: Array(year...min(currentYear, year + 9)))
+        }
+    }
+}
+
+class SelectedEraViewModel: ObservableObject {
+    @Published var selectedEraItems: Set<EraItem> = []
+    
+    func selectedEras() -> String {
+        let selectedItemsArray = Array(selectedEraItems)
+        let selectedEraNames = selectedItemsArray.map { "\(String($0.id))" }
+        return selectedEraNames.joined(separator: ",")
+    }
+}
+
+struct EraView: View {
     @Environment(\.presentationMode) var presentationMode
     @EnvironmentObject var selectedEraViewModel: SelectedEraViewModel
-
-    var eraRange: ClosedRange<Int>
-
+    @StateObject var viewModel: EraViewModel
+    
+    struct CustomColor {
+        static let textColor = Color("textColor")
+    }
+    
     var body: some View {
         VStack {
-            Text("Era \(eraRange.lowerBound) to \(eraRange.upperBound)")
-                .navigationBarTitle("Era \(eraRange.lowerBound) - \(eraRange.upperBound)")
-
-            Button(action: {
-                toggleEraSelection(eraRange)
-            }) {
-                Text(selectedEraViewModel.selectedEras.contains(eraRange) ? "Deselect Era" : "Select Era")
+            List(viewModel.eras) { eraItem in
+                Button(action: {
+                    toggleEraSelection(eraItem)
+                }) {
+                    HStack {
+                        Text("\(eraItem.id)")
+                        Spacer()
+                        if selectedEraViewModel.selectedEraItems.contains(eraItem) {
+                            Image(systemName: "checkmark")
+                                .foregroundColor(Color.accentColor)
+                        }
+                    }
+                }
             }
-            .foregroundColor(.white)
-            .frame(width: 300, height: 50)
-            .background(selectedEraViewModel.selectedEras.contains(eraRange) ? Color.red : Color.accentColor)
-            .cornerRadius(10)
-
-            Spacer()
-
+            
             Button(action: {
                 dismissEraView()
-                print(selectedEraViewModel.selectedEraNames())
+                print(selectedEraViewModel.selectedEras())
             }) {
                 Text("Submit")
                     .foregroundColor(.white)
@@ -349,40 +404,17 @@ struct EraDetailView: View {
             }
         }
     }
-
-    private func toggleEraSelection(_ eraRange: ClosedRange<Int>) {
-        if selectedEraViewModel.selectedEras.contains(eraRange) {
-            selectedEraViewModel.selectedEras.remove(eraRange)
+    
+    private func toggleEraSelection(_ eraItem: EraItem) {
+        if selectedEraViewModel.selectedEraItems.contains(eraItem) {
+            selectedEraViewModel.selectedEraItems.remove(eraItem)
         } else {
-            selectedEraViewModel.selectedEras.insert(eraRange)
+            selectedEraViewModel.selectedEraItems.insert(eraItem)
         }
     }
-
+    
     private func dismissEraView() {
         presentationMode.wrappedValue.dismiss()
-    }
-}
-
-class SelectedEraViewModel: ObservableObject {
-    @Published var selectedEras: Set<ClosedRange<Int>> = []
-    
-    func selectedEraNames() -> String {
-        return selectedEras.map { "Era \($0.lowerBound) to \($0.upperBound)" }.joined(separator: ", ")
-    }
-
-    var eraViewModel = EraViewModel()
-}
-
-class EraViewModel: ObservableObject {
-    private let startYear = 1900
-    private let endYear = 2020
-
-    var eraRanges: [ClosedRange<Int>] {
-        var eraRanges = [ClosedRange<Int>]()
-        for year in stride(from: startYear, through: endYear, by: 10) {
-            eraRanges.append(year...(year + 9))
-        }
-        return eraRanges
     }
 }
 
@@ -403,11 +435,11 @@ class ScoreViewModel: ObservableObject {
 
     init() {
         scores = [
-            ScoreItem(id: 1, value: 1),
-            ScoreItem(id: 2, value: 3),
-            ScoreItem(id: 3, value: 4),
-            ScoreItem(id: 4, value: 6),
-            ScoreItem(id: 5, value: 7)
+            ScoreItem(id: 1, value: 2),
+            ScoreItem(id: 2, value: 4),
+            ScoreItem(id: 3, value: 6),
+            ScoreItem(id: 4, value: 7),
+            ScoreItem(id: 5, value: 10)
         ]
     }
 }

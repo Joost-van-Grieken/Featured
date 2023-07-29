@@ -152,10 +152,10 @@ struct MovieDetailListView: View {
                     
                     Button(action: {
                         if settings.isLoggedIn, watchedOn {
-                            UserDefaults.standard.setWatchedMovieCount(value: false, movieId: movie.id, durationText: movie.durationText)
+                            UserDefaults.standard.setWatchedMovieCount(value: false, movieId: movie.id)
                             settings.removeMovieID(movieID: movie.id) // Remove movie ID from savedMovieIDs
                         } else {
-                            UserDefaults.standard.setWatchedMovieCount(value: true, movieId: movie.id, durationText: movie.durationText)
+                            UserDefaults.standard.setWatchedMovieCount(value: true, movieId: movie.id)
                             settings.addMovieID(movieID: movie.id) // Save movie ID to savedMovieIDs
                         }
                         watchedOn.toggle()

@@ -26,7 +26,7 @@ class RandomMovieStore: ObservableObject {
         let genresString = genres.map { String($0) }.joined(separator: ",")
         let providersString = providers.map { String($0) }.joined(separator: ",")
         let languageString = language.joined(separator: ",")
-        let eraString = era.joined(separator: ",")
+        let eraString = era.map { String($0) }.joined(separator: ",")
         let scoreString = score.map { String($0) }.joined(separator: ",")
         
         guard let encodedGenres = genresString.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed),
@@ -38,7 +38,7 @@ class RandomMovieStore: ObservableObject {
             return
         }
         
-        let urlString = "\(baseAPIURL)/discover/movie?api_key=\(apiKey)&page=1&with_genres=\(encodedGenres)&with_watch_providers=\(encodedProviders)&with_original_language=\(encodedLanguage)&primary_release_year=\(encodedEra)&vote_average.gte=\(encodedScore)&include_adult=false&watch_region=NL"
+        let urlString = "\(baseAPIURL)/discover/movie?api_key=\(apiKey)&page=1&with_genres=\(encodedGenres)&with_watch_providers=\(encodedProviders)&with_original_language=\(encodedLanguage)&primary_release_year=\(encodedEra)&vote_average.lte=\(encodedScore)&include_adult=false&watch_region=NL"
         
         guard let url = URL(string: urlString) else {
             completion(.failure(.invalidEndpoint))
@@ -66,7 +66,7 @@ class RandomMovieStore: ObservableObject {
     }
     
     func discoverMovies(page: Int, genres: String, providers: String, language: String, era: String, score: String, completion: @escaping (Result<RandomMovieResponse, MovieError>) -> ()) {
-        guard let url = URL(string: "\(baseAPIURL)/discover/movie?api_key=\(apiKey)&page=\(page)&with_genres=\(genres)&with_watch_providers=\(providers)&with_original_language=\(language)&primary_release_year=\(era)&vote_average.gte=\(score)&include_adult=false&watch_region=NL")
+        guard let url = URL(string: "\(baseAPIURL)/discover/movie?api_key=\(apiKey)&page=\(page)&with_genres=\(genres)&with_watch_providers=\(providers)&with_original_language=\(language)&primary_release_year=\(era)&vote_average.lte=\(score)&include_adult=false&watch_region=NL")
         else {
             completion(.failure(.invalidEndpoint))
             print("The page is", page)
