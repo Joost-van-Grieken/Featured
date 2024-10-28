@@ -17,7 +17,6 @@ extension UserDefaults: ObservableObject {
         
         case watchedState
         case watchedCount
-//        case totalWatchedMinutes
         case savedState
         case rated
     }
@@ -87,8 +86,6 @@ extension UserDefaults: ObservableObject {
         return double(forKey: UserDefaultsKeys.rated.rawValue)
     }
 }
-
-//MARK: - Hanteert de login status.
 
 class UserSettings: ObservableObject {
     @Published var isLoggedIn: Bool {
@@ -161,4 +158,3 @@ class UserSettings: ObservableObject {
         }
     }
 }
-

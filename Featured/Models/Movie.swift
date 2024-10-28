@@ -136,6 +136,7 @@ struct Movie: Decodable, Identifiable, Hashable {
     var youtubeTrailers: [MovieVideo]? {
         videos?.results.filter { $0.youtubeURL != nil }
     }
+    
 }
 
 struct MovieGenre: Decodable {

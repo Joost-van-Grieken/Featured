@@ -18,12 +18,10 @@ struct MovieFullListView: View {
     let endpoint: MovieListEndpoint
     
     @State private var isLoggedIn = false
-    
     @State var selection = 0
     
     @State private var watchedOn = false
     @State private var savedOn = false
-    @State private var isScrolledToEnd = false
     
     var items: [GridItem] = [GridItem(.flexible(), spacing: 20), GridItem(.flexible(), spacing: 20)]
     
@@ -123,21 +121,25 @@ struct MovieFullListView: View {
                         }
                         .background(Color.gray.opacity(0.1))
                         .cornerRadius(10)
+                        .onAppear {
+                            if movieListState.movies.last == movie {
+                                movieListState.fetchNextPage(from: endpoint)
+                            }
+                        }
+                    }
+                    
+                    if movieListState.isLoading {
+                        HStack {
+                            Spacer()
+                            ProgressView()
+                            Spacer()
+                        }
                     }
                 }
-                Button(action: {
-                    movieListState.fetchNextPage(from: endpoint)
-                }) {
-                    Text("Load More")
-                        .font(.headline)
-                        .foregroundColor(.blue)
-                        .padding()
-                        .background(Color.gray.opacity(0.1))
-                        .cornerRadius(10)
-                }
-                .padding()
+                .padding(.horizontal)
             }
         }
+        .navigationBarTitle(title, displayMode: .inline)
         .onAppear {
             loadInitialMovies()
         }
@@ -150,6 +152,6 @@ struct MovieFullListView: View {
 
 //struct MovieFullListView_Previews: PreviewProvider {
 //    static var previews: some View {
-//        MovieFullListView(title: "", endpoint: MovieListEndpoint)
+//        MovieFullListView(title: "", endpoint: MovieListEndpoint.self)
 //    }
 //}

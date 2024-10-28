@@ -16,19 +16,22 @@ class MovieListState: ObservableObject {
     
     private let movieService: MovieService
     private var currentPage: Int = 1
+    private var canLoadMorePages = true
     
     init(movieService: MovieService = MovieStore.shared) {
         self.movieService = movieService
     }
     
     func loadMovies(from endpoint: MovieListEndpoint, page: Int) {
+        guard !isLoading else { return }
         self.isLoading = true
         self.movieService.fetchMovies(from: endpoint, page: page) { [weak self] (result) in
             guard let self = self else { return }
             self.isLoading = false
             switch result {
             case .success(let response):
-                self.movies = response.results
+                self.movies.append(contentsOf: response.results)
+                self.canLoadMorePages = response.results.count > 0
                 
             case .failure(let error):
                 self.error = error
@@ -37,10 +40,9 @@ class MovieListState: ObservableObject {
     }
     
     func fetchNextPage(from endpoint: MovieListEndpoint) {
-        guard !isLoading else { return }
+        guard canLoadMorePages else { return }
         let nextPage = currentPage + 1
         loadMovies(from: endpoint, page: nextPage)
         currentPage = nextPage
-        print("current page is", currentPage)
     }
 }

@@ -13,6 +13,7 @@ struct FilterView: View {
     @Environment(\.presentationMode) var presentationMode
     @StateObject var settings = UserSettings()
     
+    @Binding var isFilterPresented: Bool
     @Binding var numOption: Int
     @ObservedObject var selectedGenresViewModel = SelectedGenresViewModel()
     @ObservedObject var selectedProviderViewModel = SelectedProviderViewModel()
@@ -20,7 +21,8 @@ struct FilterView: View {
     @ObservedObject var selectedEraViewModel = SelectedEraViewModel()
     @ObservedObject var selectedScoreViewModel = SelectedScoreViewModel()
     
-    @State var savedForLater = false
+    @State var savedForLater: Bool = false
+    var randomizeAction: () -> Void
     
     struct CustomColor {
         static let textColor = Color("textColor")
@@ -52,7 +54,7 @@ struct FilterView: View {
                     NavigationLink(destination: ProviderView(viewModel: ProviderViewModel())
                         .environmentObject(selectedProviderViewModel)) {
                             HStack {
-                                Text("Providers")
+                                Text("Streaming on")
                                 if !selectedProviderViewModel.selectedProvider.isEmpty {
                                     Text(selectedProviderViewModel.selectedProviderNames())
                                         .foregroundColor(.gray)
@@ -92,33 +94,33 @@ struct FilterView: View {
                                 }
                             }
                         }
-                    Section {
-                        if settings.isLoggedIn {
-                            Toggle(isOn: $savedForLater, label: {
-                                Text("Saved for later")
-                            })
-                        } else {
-                            Toggle(isOn: $savedForLater, label: {
-                                Image(systemName: "lock")
-                                Text("Saved for later")
-                            })
-                            .disabled(true)
-                        }
-                    }
+//                    Section {
+//                        if settings.isLoggedIn {
+//                            Toggle(isOn: $savedForLater, label: {
+//                                Text("Saved for later")
+//                            })
+//                        } else {
+//                            Toggle(isOn: $savedForLater, label: {
+//                                Image(systemName: "lock")
+//                                Text("Saved for later")
+//                            })
+//                            .disabled(true)
+//                        }
+//                    }
                 }
                 .foregroundColor(CustomColor.textColor)
                 
                 Spacer()
                 
                 Button(action: {
-                    presentationMode.wrappedValue.dismiss()
+                    isFilterPresented = false
+                    randomizeAction()
                     print(selectedGenresViewModel.selectedGenres)
                     print(selectedProviderViewModel.selectedProvider)
                     print(selectedLanguageViewModel.selectedLanguages)
-
                     print(selectedScoreViewModel.selectedScores)
                 }) {
-                    Text("Done")
+                    Text("Randomise")
                         .foregroundColor(.white)
                         .frame(width: 300, height: 50)
                         .background(Color.accentColor)
@@ -132,7 +134,17 @@ struct FilterView: View {
 
 struct FilterView_Previews: PreviewProvider {
     static var previews: some View {
-        FilterView(numOption: .constant(3))
+        FilterView(
+            isFilterPresented: .constant(false),
+            numOption: .constant(3),
+            selectedGenresViewModel: SelectedGenresViewModel(),
+            selectedProviderViewModel: SelectedProviderViewModel(),
+            selectedLanguageViewModel: SelectedLanguageViewModel(),
+            selectedEraViewModel: SelectedEraViewModel(),
+            selectedScoreViewModel: SelectedScoreViewModel(),
+            savedForLater: false,
+            randomizeAction: { }
+        )
     }
 }
 
@@ -203,7 +215,6 @@ struct GenreView: View {
 }
 
 // MARK: provider filter view
-
 class SelectedProviderViewModel: ObservableObject {
     @Published var selectedProvider: Set<Provider> = []
     
@@ -288,7 +299,7 @@ struct LanguageView: View {
     
     var body: some View {
         VStack {
-            List(viewModel.languages, id: \.iso639_1) { language in
+            List(viewModel.languages, id: \.iso_639_1) { language in
                 Button(action: {
                     toggleLanguageSelection(language)
                 }) {
@@ -349,9 +360,20 @@ class EraViewModel: ObservableObject {
     
     init() {
         let currentYear = Calendar.current.component(.year, from: Date())
-        let startYearsOfDecades = stride(from: 1900, through: currentYear, by: 10)
-        eras = startYearsOfDecades.compactMap { year in
-            EraItem(id: year, value: Array(year...min(currentYear, year + 9)))
+        let startYear = ((currentYear / 10) * 10)
+        let endYear = startYear + 10
+        let startYearsOfDecades = stride(from: startYear - 10, through: 1920, by: -10)
+        eras = startYearsOfDecades.compactMap { startDecade in
+            let endDecade = startDecade + 9
+            let years = Array(max(startDecade, 1920)...min(endDecade, currentYear))
+            return EraItem(id: startDecade, value: years)
+        }
+        
+        // voegt de huidige decenium als het nog niet is toegevoegd
+        let currentDecade = Array(startYear...min(endYear, currentYear))
+        let currentDecadeItem = EraItem(id: startYear, value: currentDecade)
+        if eras.first?.id != startYear {
+            eras.insert(currentDecadeItem, at: 0)
         }
     }
 }
@@ -383,6 +405,7 @@ struct EraView: View {
                 }) {
                     HStack {
                         Text("\(eraItem.id)")
+                            .foregroundColor(CustomColor.textColor)
                         Spacer()
                         if selectedEraViewModel.selectedEraItems.contains(eraItem) {
                             Image(systemName: "checkmark")

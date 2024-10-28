@@ -11,6 +11,8 @@ import SwiftUI
 import Combine
 
 struct RandomiserView: View {
+    @EnvironmentObject var settings: UserSettings
+    
     struct CustomColor {
         static let textColor = Color("textColor")
     }
@@ -28,7 +30,7 @@ struct RandomiserView: View {
     @StateObject var selectedEraViewModel = SelectedEraViewModel()
     @StateObject var selectedScoreViewModel = SelectedScoreViewModel()
     
-    @State var savedForLater = false
+    @State var savedForLater: Bool = false
     
     var totalPages: RandomMovieStore
     
@@ -48,107 +50,87 @@ struct RandomiserView: View {
                         .background(Color.accentColor)
                         .cornerRadius(10)
                         .sheet(isPresented: $isShowingFilters) {
-                            FilterView(numOption: $numOption,
+                            FilterView(isFilterPresented: $isShowingFilters,
+                                       numOption: $numOption,
                                        selectedGenresViewModel: selectedGenresViewModel,
                                        selectedProviderViewModel: selectedProviderViewModel,
                                        selectedLanguageViewModel: selectedLanguageViewModel,
                                        selectedEraViewModel: selectedEraViewModel,
                                        selectedScoreViewModel: selectedScoreViewModel,
-                                       savedForLater: false)
+                                       savedForLater: savedForLater,
+                                       randomizeAction: randomizeAction)
                         }
 
                 }
                 
                 Spacer()
                 
-                ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(alignment: .top, spacing: 30) {
-                        Spacer()
-                        ForEach(filteredMovies, id: \.self) { movie in
-                            NavigationLink(destination: MovieDetailView(movieId: movie.id)) {
-                                VStack(alignment: .leading) {
-                                    Text(movie.title)
-                                        .font(.system(size: 22).weight(.bold))
-                                        .foregroundColor(CustomColor.textColor)
-                                        .lineLimit(1)
-                                    
-                                    MoviePosterCard(movie: movie)
-                                        .frame(width: 260, height: 390)
-                                    
-                                    Text(movie.genreText)
-                                        .foregroundColor(CustomColor.textColor)
-                                        .font(.system(size: 18).weight(.bold))
-                                        .lineLimit(1)
-                                        .truncationMode(.tail)
-                                    Spacer()
-                                        .frame(height: 5)
-                                    HStack(alignment: .bottom, spacing: 20) {
-                                        Text(movie.yearText)
+                ScrollViewReader { scrollProxy in
+                    ScrollView(.horizontal, showsIndicators: false) {
+                        HStack(alignment: .top, spacing: 30) {
+                            Spacer()
+                            ForEach(filteredMovies, id: \.self) { movie in
+                                NavigationLink(destination: MovieDetailView(movieId: movie.id)) {
+                                    VStack(alignment: .leading) {
+                                        Text(movie.title)
+                                            .font(.system(size: 22).weight(.bold))
                                             .foregroundColor(CustomColor.textColor)
-                                        Text(movie.durationText)
+                                            .lineLimit(1)
+
+                                        MoviePosterCard(movie: movie)
+                                            .frame(width: 260, height: 390)
+
+                                        Text(movie.genreText)
                                             .foregroundColor(CustomColor.textColor)
-                                    }
-                                    HStack {
-                                        Image("Heart (rated)")
-                                            .resizable()
-                                            .frame(width: 25, height: 25)
-                                            .padding(.trailing, -5)
-                                        HStack(alignment: .bottom) {
-                                            Text(movie.ratingText).foregroundColor(.accentColor)
-                                            Text(movie.formattedVoteCount)
-                                                .font(.system(size: 14))
+                                            .font(.system(size: 18).weight(.bold))
+                                            .lineLimit(1)
+                                            .truncationMode(.tail)
+                                        Spacer()
+                                            .frame(height: 5)
+                                        HStack(alignment: .bottom, spacing: 20) {
+                                            Text(movie.yearText)
+                                                .foregroundColor(CustomColor.textColor)
+                                            Text(movie.durationText)
+                                                .foregroundColor(CustomColor.textColor)
                                         }
+                                        HStack {
+                                            Image("Heart (rated)")
+                                                .resizable()
+                                                .frame(width: 25, height: 25)
+                                                .padding(.trailing, -5)
+                                            HStack(alignment: .bottom) {
+                                                Text(movie.ratingText).foregroundColor(.accentColor)
+                                                Text(movie.formattedVoteCount)
+                                                    .font(.system(size: 14))
+                                            }
+                                        }
+                                        .padding(.top, -10)
+                                        .padding(.bottom, -10)
                                     }
-                                    .padding(.top, -10)
-                                    .padding(.bottom, -10)
+                                    .frame(width: 260)
+                                    .padding(20)
+                                    .overlay(
+                                        RoundedRectangle(cornerRadius: 10)
+                                            .stroke(Color.accentColor, lineWidth: 3)
+                                    )
                                 }
-                                .frame(width: 260)
-                                .padding(20)
-                                .overlay(
-                                    RoundedRectangle(cornerRadius: 10)
-                                        .stroke(Color.accentColor, lineWidth: 3)
-                                )
+                            }
+                            Spacer()
+                        }
+                    }
+                    .onChange(of: filteredMovies) { _ in
+                        if let firstMovie = filteredMovies.first {
+                            withAnimation {
+                                scrollProxy.scrollTo(firstMovie, anchor: .center)
                             }
                         }
-                        Spacer()
                     }
                 }
                 
                 Spacer()
                 
                 Button(action: {
-                    Task {
-                        performTask(
-                            numOption: numOption,
-                            selectedGenresViewModel: selectedGenresViewModel,
-                            selectedProviderViewModel: selectedProviderViewModel,
-                            selectedLanguageViewModel: selectedLanguageViewModel,
-                            selectedEraViewModel: selectedEraViewModel,
-                            selectedScoreViewModel: selectedScoreViewModel
-                        ) { movieIDs,arg  in
-                            var fetchedMovies = [Movie]()
-                            let dispatchGroup = DispatchGroup()
-                            
-                            // plaatst de id van de films om de infromatie eruit te halen
-                            for id in movieIDs {
-                                dispatchGroup.enter()
-                                print("Fetching movie with ID: \(id)")
-                                MovieStore.shared.fetchMovie(id: id) { result in
-                                    switch result {
-                                    case .success(let movie):
-                                        fetchedMovies.append(movie)
-                                    case .failure(let error):
-                                        print(error.localizedDescription)
-                                    }
-                                    dispatchGroup.leave()
-                                }
-                            }
-                            
-                            dispatchGroup.notify(queue: .main) {
-                                self.filteredMovies = fetchedMovies
-                            }
-                        }
-                    }
+                    randomizeAction()
                 }) {
                     Text("Randomise")
                         .font(.headline)
@@ -157,12 +139,78 @@ struct RandomiserView: View {
                         .background(Color.accentColor)
                         .cornerRadius(10)
                 }
+//                .disabled(settings.savedMovieIDs.isEmpty)
                 
                 Spacer()
                     .frame(height: 10)
             }
         }
         .navigationTitle("Randomiser")
+    }
+    
+// MARK: Hanteert de randomise functie
+    func randomizeAction() {
+        if savedForLater {
+            if let randomMovieID = settings.savedMovieIDs.randomElement() {
+                fetchSavedMovies(movieID: [randomMovieID])
+            }
+        } else {
+            Task {
+                performTask(
+                    numOption: numOption,
+                    selectedGenresViewModel: selectedGenresViewModel,
+                    selectedProviderViewModel: selectedProviderViewModel,
+                    selectedLanguageViewModel: selectedLanguageViewModel,
+                    selectedEraViewModel: selectedEraViewModel,
+                    selectedScoreViewModel: selectedScoreViewModel
+                ) { movieIDs,arg  in
+                    var fetchedMovies = [Movie]()
+                    let dispatchGroup = DispatchGroup()
+                    
+                    for id in movieIDs {
+                        dispatchGroup.enter()
+                        print("Fetching movie with ID: \(id)")
+                        SearchStore.shared.fetchMovie(id: id) { result in
+                            switch result {
+                            case .success(let movie):
+                                fetchedMovies.append(movie)
+                            case .failure(let error):
+                                print(error.localizedDescription)
+                            }
+                            dispatchGroup.leave()
+                        }
+                    }
+                    
+                    dispatchGroup.notify(queue: .main) {
+                        self.filteredMovies = fetchedMovies
+                    }
+                }
+            }
+        }
+    }
+    
+    // MARK: Hanteert de saved for later optie
+    func fetchSavedMovies(movieID: [Int]) {
+        var savedMovies = [Movie]()
+        let dispatchGroup = DispatchGroup()
+
+        for id in movieID {
+            dispatchGroup.enter()
+
+            SearchStore.shared.fetchMovie(id: id) { result in
+                switch result {
+                case .success(let movie):
+                    savedMovies.append(movie)
+                case .failure(let error):
+                    print(error.localizedDescription)
+                }
+                dispatchGroup.leave()
+            }
+        }
+
+        dispatchGroup.notify(queue: .main) {
+            self.filteredMovies = savedMovies
+        }
     }
 }
 
@@ -178,7 +226,7 @@ func performTask(numOption: Int, selectedGenresViewModel: SelectedGenresViewMode
     
     let selectedGenresIDs = selectedGenresViewModel.selectedGenres.map(\.id)
     let selectedProviderIDs = Array(selectedProviderViewModel.selectedProvider.map(\.provider_id).shuffled().prefix(1))
-    let selectedLanguages = selectedLanguageViewModel.selectedLanguages.map(\.iso639_1)
+    let selectedLanguages = selectedLanguageViewModel.selectedLanguages.map(\.iso_639_1)
     let selectedEraIDs = selectedEraViewModel.selectedEraItems.map { eraItem in "\(eraItem.id),\(eraItem.value.map(String.init).joined(separator: ","))"}
     let selectedScore = selectedScoreViewModel.selectedScoreItems.map { String($0.value) }.joined(separator: ",")
     let scoreArray = selectedScore.components(separatedBy: ",").compactMap { Int($0) }

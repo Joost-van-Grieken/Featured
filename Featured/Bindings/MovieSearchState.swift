@@ -20,14 +20,14 @@ class MovieSearchState: ObservableObject {
     
     private var subscriptionToken: AnyCancellable?
     
-    let movieService: MovieService
+    let searchService: SearchService
     
     var isEmptyResults: Bool {
         !self.query.isEmpty && self.movies != nil && self.movies!.isEmpty
     }
     
-    init(movieService: MovieService = MovieStore.shared) {
-        self.movieService = movieService
+    init(searchService: SearchService = SearchStore.shared) {
+        self.searchService = searchService
     }
     
     func startObserve() {
@@ -53,7 +53,7 @@ class MovieSearchState: ObservableObject {
         }
         
         self.isLoading = true
-        self.movieService.searchMovie(query: query) {[weak self] (result) in
+        self.searchService.searchMovie(query: query) {[weak self] (result) in
             guard let self = self, self.query == query else { return }
             
             self.isLoading = false
